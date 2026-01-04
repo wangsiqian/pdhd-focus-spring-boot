@@ -2,10 +2,12 @@ package com.pdhd.server.controller;
 
 import com.pdhd.server.common.annotation.EnableApiResponse;
 import com.pdhd.server.pojo.resp.UserDTO;
+import com.pdhd.server.req.GetByIdReq;
 import com.pdhd.server.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
@@ -22,8 +24,8 @@ public class UserController {
         return userService.getCurrentUserInfo();
     }
 
-    @GetMapping("/{id}")
-    public UserDTO getById(@PathVariable("id") Long userId) {
-        return userService.getById(userId);
+    @PostMapping("/getById")
+    public UserDTO getById(@RequestBody GetByIdReq req) {
+        return userService.getById(req.getId());
     }
 }

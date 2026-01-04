@@ -1,0 +1,26 @@
+package com.pdhd.server.pojo.resp;
+
+import lombok.Data;
+
+import java.time.LocalDateTime;
+
+/**
+ * @author pdhd
+ */
+@Data
+public class ScheduleDTO {
+    private Long id;
+    private String title;
+    private String content;
+    private String type;
+    private String zone;
+    private Long goalId;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private Integer status;
+    private String repeatRule;
+    private String customDays;
+    private String groupId;
+    private Long userId;
+    private LocalDateTime createdAt;
+}

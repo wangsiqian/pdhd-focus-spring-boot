@@ -9,17 +9,27 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * @author wangsiqian
+ * @author pdhd
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Schedule {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String username;
-    private String password;
+    private String title;
+    private String content;
+    private String type;
+    private String zone;
+    private Long goalId;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private Integer status;
+    private String repeatRule;
+    private String customDays;
+    private String groupId;
+    private Long userId;
 
     @TableLogic(value = "0", delval = "1")
     private Boolean isDelete;

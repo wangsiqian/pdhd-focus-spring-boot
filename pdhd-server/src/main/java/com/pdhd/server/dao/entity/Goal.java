@@ -9,17 +9,20 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * @author wangsiqian
+ * @author pdhd
  */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Goal {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String username;
-    private String password;
+    private String title;
+    private String color;
+    private Integer status;
+    private Integer progress;
+    private Long userId;
 
     @TableLogic(value = "0", delval = "1")
     private Boolean isDelete;

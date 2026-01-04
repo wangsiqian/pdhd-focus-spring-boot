@@ -1,6 +1,5 @@
 package com.pdhd.server.common.util;
 
-import com.alibaba.fastjson2.JSONObject;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.cglib.beans.BeanCopier;

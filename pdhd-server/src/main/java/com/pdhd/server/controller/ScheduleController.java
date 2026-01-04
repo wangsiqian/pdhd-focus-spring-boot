@@ -1,0 +1,44 @@
+package com.pdhd.server.controller;
+
+import com.pdhd.server.common.annotation.EnableApiResponse;
+import com.pdhd.server.pojo.resp.ScheduleDTO;
+import com.pdhd.server.req.GetByIdReq;
+import com.pdhd.server.req.ScheduleReq;
+import com.pdhd.server.service.ScheduleService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import javax.validation.Valid;
+import java.util.List;
+
+/**
+ * @author pdhd
+ */
+@RequestMapping("/webApi/schedules")
+@EnableApiResponse
+@RequiredArgsConstructor
+public class ScheduleController {
+    private final ScheduleService scheduleService;
+
+    @PostMapping("/getById")
+    public ScheduleDTO getById(@RequestBody GetByIdReq req) {
+        return scheduleService.getById(req.getId());
+    }
+
+    @PostMapping("/list")
+    public List<ScheduleDTO> list() {
+        return scheduleService.list();
+    }
+
+    @PostMapping("/upsert")
+    public ScheduleDTO upsert(@Valid @RequestBody ScheduleReq scheduleReq) {
+        return scheduleService.upsert(scheduleReq);
+    }
+
+    @PostMapping("/delete")
+    public void delete(@RequestBody GetByIdReq req) {
+        scheduleService.delete(req.getId());
+    }
+}
