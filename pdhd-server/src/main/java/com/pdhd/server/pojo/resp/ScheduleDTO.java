@@ -6,6 +6,7 @@ import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * @author pdhd
@@ -18,8 +19,10 @@ public class ScheduleDTO {
     private TypeEnum type;
     private ZoneTypeEnum zone;
     private Long goalId;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
     private Integer status;
     private RepeatRuleEnum repeatRule;
     private String customDays;

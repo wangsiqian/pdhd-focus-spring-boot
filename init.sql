@@ -35,10 +35,12 @@ CREATE TABLE `schedule`
     `type`        VARCHAR(50) COMMENT '类型(WORK,INVEST,STUDY,LIFE)',
     `zone`        VARCHAR(50) COMMENT '难度分区(COMFORT,STRETCH,DIFFICULTY)',
     `goal_id`     BIGINT COMMENT '关联目标ID',
-    `start_time`  DATETIME     NOT NULL COMMENT '开始时间',
-    `end_time`    DATETIME     NOT NULL COMMENT '结束时间',
-    `repeat_rule` VARCHAR(50) DEFAULT 'NONE' COMMENT '重复规则(NONE,DAILY,WEEKDAY,CUSTOM)',
-    `custom_days` VARCHAR(50) COMMENT '自定义重复天数',
+    `start_time`        TIME         COMMENT '循环计划开始时间(时分秒)',
+    `end_time`          TIME         COMMENT '循环计划结束时间(时分秒)',
+    `start_date_time`   DATETIME     COMMENT '单次计划开始时间',
+    `end_date_time`     DATETIME     COMMENT '单次计划结束时间',
+    `repeat_rule_type`   VARCHAR(50) DEFAULT 'NONE' COMMENT '重复规则类型(NONE,CUSTOM)',
+    `repeat_rule_config` TEXT COMMENT '重复规则配置(JSON)',
     `group_id`    VARCHAR(100) COMMENT '重复任务组ID',
     `user_id`     BIGINT       NOT NULL COMMENT '所属用户ID',
     `is_delete`   TINYINT     DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
@@ -46,8 +48,8 @@ CREATE TABLE `schedule`
     `updated_at`  DATETIME COMMENT '更新时间',
     INDEX `idx_user_id` (`user_id`),
     INDEX `idx_goal_id` (`goal_id`),
-    INDEX `idx_start_time` (`start_time`),
-    INDEX `idx_end_time` (`end_time`)
+    INDEX `idx_start_date_time` (`start_date_time`),
+    INDEX `idx_end_date_time` (`end_date_time`)
 ) COMMENT '计划表';
 
 -- 实际事项表

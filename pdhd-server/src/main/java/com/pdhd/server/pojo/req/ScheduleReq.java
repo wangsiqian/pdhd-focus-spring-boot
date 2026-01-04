@@ -8,6 +8,7 @@ import lombok.Data;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 /**
  * @author pdhd
@@ -15,10 +16,10 @@ import java.time.LocalDateTime;
 @Data
 public class ScheduleReq {
     private Long id;
-    
+
     @NotBlank(message = "计划标题不能为空")
     private String title;
-    
+
     private String content;
 
     @NotNull(message = "计划类型不能为空")
@@ -27,13 +28,15 @@ public class ScheduleReq {
     private ZoneTypeEnum zone;
 
     private Long goalId;
-    
-    @NotNull(message = "开始时间不能为空")
-    private LocalDateTime startTime;
-    
-    @NotNull(message = "结束时间不能为空")
-    private LocalDateTime endTime;
-    
+
+    // 循环计划的时间范围 (HH:mm:ss)
+    private LocalTime startTime;
+    private LocalTime endTime;
+
+    // 单次计划的时间范围 (yyyy-MM-dd HH:mm:ss)
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
+
     private RepeatRuleEnum repeatRule;
     private String customDays;
     private String groupId;

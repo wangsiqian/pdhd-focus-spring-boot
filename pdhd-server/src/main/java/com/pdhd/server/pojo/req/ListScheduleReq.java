@@ -19,8 +19,8 @@ public class ListScheduleReq {
     private Long goalId;
 
     @NotNull
-    private LocalDateTime startTime;
+    private LocalDateTime startDateTime;
     @NotNull
-    private LocalDateTime endTime;
+    private LocalDateTime endDateTime;
     private Boolean fullDetail;
 }
