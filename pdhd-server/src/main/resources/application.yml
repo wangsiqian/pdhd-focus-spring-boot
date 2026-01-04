@@ -1,0 +1,72 @@
+server:
+  shutdown: graceful
+spring:
+  lifecycle:
+    timeout-per-shutdown-phase: 25s
+  task:
+    execution:
+      pool:
+        max-size: 50
+        core-size: 4
+        queue-capacity: 20480
+        keep-alive: 30s
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      auto-commit: true
+      connection-timeout: 20000
+      maximum-pool-size: 30
+      minimum-idle: 5
+      idle-timeout: 300000
+      max-lifetime: 1200000
+  redis:
+    jedis:
+      pool:
+        max-active: 1000
+        max-wait: 10000ms
+        max-idle: 100
+        time-between-eviction-runs: 30s
+
+mybatis-plus:
+  # 定义mybatis映射文件的位置
+  mapper-locations: classpath:/mapper/*Mapper.xml
+
+#xxl配置文件
+xxl:
+  job:
+    admin:
+    executor:
+      appname: ${spring.application.name}
+      logretentiondays: -1
+      accessToken:
+    chainData:
+      compensate:
+        jobBiz:
+          handleDataHour: 30000
+          pageSize: 100
+        jobChainData:
+          handleDataHour: 30000
+          pageSize: 100
+
+## 监控和健康管理.
+management:
+  endpoint:
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: prometheus
+      path-mapping:
+        prometheus: metrics
+      base-path: /
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      prometheus:
+        enabled: true
+  server:
+    port: 8081
