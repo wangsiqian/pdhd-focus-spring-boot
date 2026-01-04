@@ -10,6 +10,6 @@ import java.util.List;
  */
 @Data
 public class PlanDTO {
-    private LocalDate localDate;
+    private LocalDate date;
     private List<ScheduleDTO> schedules;
 }

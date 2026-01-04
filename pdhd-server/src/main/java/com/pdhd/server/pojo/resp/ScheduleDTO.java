@@ -3,7 +3,10 @@ package com.pdhd.server.pojo.resp;
 import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.enums.TypeEnum;
 import com.pdhd.server.common.enums.ZoneTypeEnum;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -12,6 +15,9 @@ import java.time.LocalTime;
  * @author pdhd
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ScheduleDTO {
     private Long id;
     private String title;

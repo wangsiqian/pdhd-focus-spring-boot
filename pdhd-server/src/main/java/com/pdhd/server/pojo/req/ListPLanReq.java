@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 public class ListPLanReq {
     @NotNull
-    private LocalDateTime startTime;
+    private LocalDateTime startDateTime;
     @NotNull
-    private LocalDateTime endTime;
+    private LocalDateTime endDateTime;
 }

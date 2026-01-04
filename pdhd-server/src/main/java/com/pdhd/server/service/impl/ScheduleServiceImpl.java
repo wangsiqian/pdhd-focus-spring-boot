@@ -1,11 +1,13 @@
 package com.pdhd.server.service.impl;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
+import cn.hutool.core.util.BooleanUtil;
+
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.exception.ApiException;
 import com.pdhd.server.common.util.ContextUtils;
@@ -23,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -59,9 +62,9 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     public List<ScheduleDTO> list(ListScheduleReq req) {
         Long currentUserId = ContextUtils.currentUser().getId();
+        log.debug("Get schedule list, userId: {}, req: {}", currentUserId, req);
 
-        // 1. 查询单次计划的数据 (使用 startDateTime 和 endDateTime)
-        // 查询条件：计划的开始时间 <= 范围结束时间 且 计划的结束时间 >= 范围开始时间
+        // 1. 查询单次计划的数据
         List<Schedule> singleSchedules = scheduleRepository.lambdaQuery()
                 .eq(Schedule::getUserId, currentUserId)
                 .eq(Objects.nonNull(req.getGoalId()), Schedule::getGoalId, req.getGoalId())
@@ -74,7 +77,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .map(schedule -> convertToDTO(schedule, req.getFullDetail()))
                 .collect(Collectors.toList());
 
-        // 2. 查询循环计划的数据 (使用 startTime 和 endTime)
+        // 2. 查询循环计划的数据
         List<Schedule> repeatSchedules = scheduleRepository.lambdaQuery()
                 .eq(Schedule::getUserId, currentUserId)
                 .eq(Objects.nonNull(req.getGoalId()), Schedule::getGoalId, req.getGoalId())
@@ -97,12 +100,8 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         // 遍历每一天
         long days = LocalDateTimeUtil.between(queryStart, queryEnd).toDays();
-        // 如果结束时间是当天的 00:00:00，可能是要查到前一天结束，这里简单处理，包含 start 到 end 的每一天
-        // 更严谨的做法是按天迭代
-
-        for (int i = 0; i <= days + 1; i++) { // +1 确保覆盖最后一天（如果时间有重叠）
+        for (int i = 0; i <= days + 1; i++) {
             LocalDateTime currentDate = queryStart.plusDays(i).truncatedTo(ChronoUnit.DAYS);
-            // 如果当前迭代的日期已经超过了查询结束时间，停止。（注意处理边界）
             if (currentDate.isAfter(queryEnd)) {
                 break;
             }
@@ -110,31 +109,36 @@ public class ScheduleServiceImpl implements ScheduleService {
             DayOfWeek currentDayOfWeek = currentDate.getDayOfWeek();
 
             for (Schedule schedule : repeatSchedules) {
-                JSONObject repeatRuleConfig = JSONObject.parse(schedule.getRepeatRuleConfig());
-                List<DayOfWeek> ruleDays = repeatRuleConfig.getList("daysOfWeek", DayOfWeek.class);
+                try {
+                    JSONObject repeatRuleConfig = JSONObject.parse(schedule.getRepeatRuleConfig());
+                    if (repeatRuleConfig == null)
+                        continue;
 
-                if (CollUtil.contains(ruleDays, currentDayOfWeek)) {
-                    // 结合 Date 和 Time 生成 DateTime
-                    LocalDateTime instanceStart = LocalDateTime.of(currentDate.toLocalDate(), schedule.getStartTime());
-                    LocalDateTime instanceEnd = LocalDateTime.of(currentDate.toLocalDate(), schedule.getEndTime());
+                    List<DayOfWeek> ruleDays = repeatRuleConfig.getList("daysOfWeek", DayOfWeek.class);
+                    if (CollUtil.contains(ruleDays, currentDayOfWeek)) {
+                        // 结合 Date 和 Time 生成 DateTime
+                        LocalDateTime instanceStart = LocalDateTime.of(currentDate.toLocalDate(),
+                                schedule.getStartTime());
+                        LocalDateTime instanceEnd = LocalDateTime.of(currentDate.toLocalDate(), schedule.getEndTime());
 
-                    // 处理跨天情况：如果结束时间小于开始时间，说明跨天了，结束日期需要+1天
-                    if (schedule.getEndTime().isBefore(schedule.getStartTime())) {
-                        instanceEnd = instanceEnd.plusDays(1);
+                        // 处理跨天 (结束时间小于开始时间)
+                        if (schedule.getEndTime().isBefore(schedule.getStartTime())) {
+                            instanceEnd = instanceEnd.plusDays(1);
+                        }
+
+                        // 判断时间段交集：实例结束 > 查询开始 && 实例开始 < 查询结束
+                        if (instanceEnd.isAfter(queryStart) && instanceStart.isBefore(queryEnd)) {
+                            ScheduleDTO dto = convertToDTO(schedule, fullDetail);
+                            dto.setStartDateTime(instanceStart);
+                            dto.setEndDateTime(instanceEnd);
+                            // 保留规则时间
+                            dto.setStartTime(schedule.getStartTime());
+                            dto.setEndTime(schedule.getEndTime());
+                            instances.add(dto);
+                        }
                     }
-
-                    // 只有当实例的时间段与查询时间段有交集时才添加
-                    // 实例结束 > 查询开始 && 实例开始 < 查询结束
-                    if (instanceEnd.isAfter(queryStart) && instanceStart.isBefore(queryEnd)) {
-                        ScheduleDTO dto = convertToDTO(schedule, fullDetail);
-                        // 覆盖为具体的实例时间 (LocalDateTime)
-                        dto.setStartDateTime(instanceStart);
-                        dto.setEndDateTime(instanceEnd);
-                        // 同时保留规则时间 (LocalTime)
-                        dto.setStartTime(schedule.getStartTime());
-                        dto.setEndTime(schedule.getEndTime());
-                        instances.add(dto);
-                    }
+                } catch (Exception e) {
+                    log.error("Parse repeat rule failed, scheduleId: {}", schedule.getId(), e);
                 }
             }
         }
@@ -144,23 +148,25 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Override
     public ScheduleDTO upsert(ScheduleReq scheduleReq) {
         Long currentUserId = ContextUtils.currentUser().getId();
+        log.info("Upsert schedule, userId: {}, req: {}", currentUserId, scheduleReq);
+
         if (scheduleReq.getId() != null) {
             // 更新操作
             Schedule existingSchedule = scheduleRepository.getById(scheduleReq.getId());
             if (Objects.isNull(existingSchedule)) {
-                log.info("计划不存在：{}", scheduleReq.getId());
+                log.warn("Schedule not found: {}", scheduleReq.getId());
                 throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
             }
 
             // 检查计划是否属于当前用户
             if (!Objects.equals(existingSchedule.getUserId(), currentUserId)) {
-                log.info("用户无权限修改此计划：{}", scheduleReq.getId());
+                log.warn("Permission denied for schedule: {}, currentUserId: {}", scheduleReq.getId(), currentUserId);
                 throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
             }
 
             Schedule schedule = convertToEntity(scheduleReq, currentUserId);
             schedule.setId(scheduleReq.getId());
-            schedule.setUserId(currentUserId); // 确保不会更改用户ID
+            schedule.setUserId(currentUserId);
             scheduleRepository.updateById(schedule);
             return convertToDTO(schedule);
         } else {
@@ -174,16 +180,17 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public void delete(Long id) {
+        Long currentUserId = ContextUtils.currentUser().getId();
+        log.info("Delete schedule: {}, userId: {}", id, currentUserId);
+
         Schedule existingSchedule = scheduleRepository.getById(id);
         if (Objects.isNull(existingSchedule)) {
-            log.info("计划不存在：{}", id);
+            log.warn("Schedule not found: {}", id);
             throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
         }
 
-        // 检查计划是否属于当前用户
-        Long currentUserId = ContextUtils.currentUser().getId();
         if (!Objects.equals(existingSchedule.getUserId(), currentUserId)) {
-            log.info("用户无权限删除此计划：{}", id);
+            log.warn("Permission denied for schedule: {}, currentUserId: {}", id, currentUserId);
             throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
         }
 
@@ -195,14 +202,64 @@ public class ScheduleServiceImpl implements ScheduleService {
      */
     @Override
     public List<PlanDTO> plan(ListPLanReq req) {
+        log.debug("Get plan list, req: {}", req);
         List<ScheduleDTO> schedules = list(ListScheduleReq.builder()
-                .startDateTime(req.getStartTime())
-                .endDateTime(req.getEndTime())
+                .startDateTime(req.getStartDateTime())
+                .endDateTime(req.getEndDateTime())
                 .build());
+
         if (CollectionUtil.isEmpty(schedules)) {
             return Collections.emptyList();
         }
-        return Collections.emptyList();
+
+        Map<LocalDate, List<ScheduleDTO>> map = new HashMap<>();
+
+        for (ScheduleDTO schedule : schedules) {
+            LocalDateTime startDateTime = schedule.getStartDateTime();
+            LocalDateTime endDateTime = schedule.getEndDateTime();
+
+            LocalDate startDate = startDateTime.toLocalDate();
+            LocalDate endDate = endDateTime.toLocalDate();
+
+            // 遍历该计划跨越的每一天
+            long days = LocalDateTimeUtil.between(startDate.atStartOfDay(), endDate.atStartOfDay()).toDays();
+
+            for (int i = 0; i <= days; i++) {
+                LocalDate currentDate = startDate.plusDays(i);
+
+                LocalDateTime splitStart = startDateTime;
+                if (currentDate.isAfter(startDate)) {
+                    // 非第一天，开始时间为 00:00:00
+                    splitStart = currentDate.atStartOfDay();
+                }
+
+                LocalDateTime splitEnd = endDateTime;
+                if (currentDate.isBefore(endDate)) {
+                    // 非最后一天，结束时间为 23:59:59
+                    splitEnd = LocalDateTime.of(currentDate, LocalTime.MAX);
+                }
+
+                ScheduleDTO newDto = new ScheduleDTO();
+                BeanUtil.copyProperties(schedule, newDto);
+                newDto.setStartDateTime(splitStart);
+                newDto.setEndDateTime(splitEnd);
+
+                map.computeIfAbsent(currentDate, k -> Lists.newArrayList()).add(newDto);
+            }
+        }
+
+        // 转换为 PlanDTO 列表并排序
+        return map.entrySet().stream()
+                .map(entry -> {
+                    PlanDTO planDTO = new PlanDTO();
+                    planDTO.setDate(entry.getKey());
+                    planDTO.setSchedules(entry.getValue().stream()
+                            .sorted(Comparator.comparing(ScheduleDTO::getStartDateTime))
+                            .collect(Collectors.toList()));
+                    return planDTO;
+                })
+                .sorted(Comparator.comparing(PlanDTO::getDate))
+                .collect(Collectors.toList());
     }
 
     private Schedule convertToEntity(ScheduleReq scheduleReq, Long userId) {
@@ -234,27 +291,17 @@ public class ScheduleServiceImpl implements ScheduleService {
         dto.setTitle(schedule.getTitle());
 
         // 根据fullDetail参数决定是否返回content字段
-        if (fullDetail != null && fullDetail) {
+        if (BooleanUtil.isTrue(fullDetail)) {
             dto.setContent(schedule.getContent());
         }
 
         dto.setType(schedule.getType());
         dto.setZone(schedule.getZone());
         dto.setGoalId(schedule.getGoalId());
-
-        // 默认设置为单次计划的时间
-        if (RepeatRuleEnum.NONE.equals(schedule.getRepeatRuleType())) {
-            dto.setStartDateTime(schedule.getStartDateTime());
-            dto.setEndDateTime(schedule.getEndDateTime());
-        } else {
-            // 循环计划：设置规则时间
-            dto.setStartTime(schedule.getStartTime());
-            dto.setEndTime(schedule.getEndTime());
-            // 循环计划的基础定义中，StartDateTime/EndDateTime 可能为空，或者设为第一次发生的时间？
-            // 暂时保持与 Entity 一致
-            dto.setStartDateTime(schedule.getStartDateTime());
-            dto.setEndDateTime(schedule.getEndDateTime());
-        }
+        dto.setStartTime(schedule.getStartTime());
+        dto.setEndTime(schedule.getEndTime());
+        dto.setStartDateTime(schedule.getStartDateTime());
+        dto.setEndDateTime(schedule.getEndDateTime());
         dto.setRepeatRule(schedule.getRepeatRuleType());
         dto.setCustomDays(schedule.getRepeatRuleConfig());
         dto.setGroupId(schedule.getGroupId());
