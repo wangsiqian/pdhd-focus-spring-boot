@@ -1,14 +1,13 @@
 package com.pdhd.server.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pdhd.server.common.exception.ApiException;
 import com.pdhd.server.common.util.ContextUtils;
 import com.pdhd.server.dao.entity.Goal;
 import com.pdhd.server.dao.repository.GoalRepository;
 import com.pdhd.server.exception.GoalExceptionEnum;
 import com.pdhd.server.pojo.resp.GoalDTO;
-import com.pdhd.server.req.GoalReq;
-import com.pdhd.server.req.ListGoalReq;
+import com.pdhd.server.pojo.req.GoalReq;
+import com.pdhd.server.pojo.req.ListGoalReq;
 import com.pdhd.server.service.GoalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

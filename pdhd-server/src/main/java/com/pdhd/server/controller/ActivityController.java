@@ -2,9 +2,9 @@ package com.pdhd.server.controller;
 
 import com.pdhd.server.common.annotation.EnableApiResponse;
 import com.pdhd.server.pojo.resp.ActivityDTO;
-import com.pdhd.server.req.ActivityReq;
-import com.pdhd.server.req.GetByIdReq;
-import com.pdhd.server.req.ListActivityReq;
+import com.pdhd.server.pojo.req.ActivityReq;
+import com.pdhd.server.pojo.req.GetByIdReq;
+import com.pdhd.server.pojo.req.ListActivityReq;
 import com.pdhd.server.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;

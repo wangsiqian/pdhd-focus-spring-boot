@@ -1,16 +1,26 @@
-package com.pdhd.server.req;
+package com.pdhd.server.pojo.req;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 /**
  * @author pdhd
  */
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class ListScheduleReq {
     private Long goalId;
+
+    @NotNull
     private LocalDateTime startTime;
+    @NotNull
     private LocalDateTime endTime;
     private Boolean fullDetail;
 }

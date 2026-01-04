@@ -1,5 +1,6 @@
-package com.pdhd.server.req;
+package com.pdhd.server.pojo.req;
 
+import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.enums.TypeEnum;
 import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.Data;
@@ -33,7 +34,7 @@ public class ScheduleReq {
     @NotNull(message = "结束时间不能为空")
     private LocalDateTime endTime;
     
-    private String repeatRule;
+    private RepeatRuleEnum repeatRule;
     private String customDays;
     private String groupId;
 }

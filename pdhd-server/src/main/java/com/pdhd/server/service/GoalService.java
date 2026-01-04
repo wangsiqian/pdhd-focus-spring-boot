@@ -1,8 +1,8 @@
 package com.pdhd.server.service;
 
 import com.pdhd.server.pojo.resp.GoalDTO;
-import com.pdhd.server.req.GoalReq;
-import com.pdhd.server.req.ListGoalReq;
+import com.pdhd.server.pojo.req.GoalReq;
+import com.pdhd.server.pojo.req.ListGoalReq;
 
 import java.util.List;
 

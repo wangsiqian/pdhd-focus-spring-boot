@@ -1,10 +1,12 @@
 package com.pdhd.server.controller;
 
 import com.pdhd.server.common.annotation.EnableApiResponse;
+import com.pdhd.server.pojo.req.GetByIdReq;
+import com.pdhd.server.pojo.req.ListPLanReq;
+import com.pdhd.server.pojo.req.ListScheduleReq;
+import com.pdhd.server.pojo.req.ScheduleReq;
+import com.pdhd.server.pojo.resp.PlanDTO;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
-import com.pdhd.server.req.GetByIdReq;
-import com.pdhd.server.req.ListScheduleReq;
-import com.pdhd.server.req.ScheduleReq;
 import com.pdhd.server.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +33,11 @@ public class ScheduleController {
     @PostMapping("/list")
     public List<ScheduleDTO> list(@Valid @RequestBody ListScheduleReq req) {
         return scheduleService.list(req);
+    }
+
+    @PostMapping("/plan")
+    public List<PlanDTO> plan(@Valid @RequestBody ListPLanReq req) {
+        return scheduleService.plan(req);
     }
 
     @PostMapping("/upsert")

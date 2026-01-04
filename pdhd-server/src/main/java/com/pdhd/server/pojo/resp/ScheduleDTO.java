@@ -1,5 +1,6 @@
 package com.pdhd.server.pojo.resp;
 
+import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.enums.TypeEnum;
 import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.Data;
@@ -20,7 +21,7 @@ public class ScheduleDTO {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer status;
-    private String repeatRule;
+    private RepeatRuleEnum repeatRule;
     private String customDays;
     private String groupId;
     private Long userId;

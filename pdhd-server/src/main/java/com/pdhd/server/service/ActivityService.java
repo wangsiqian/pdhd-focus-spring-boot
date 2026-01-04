@@ -1,8 +1,8 @@
 package com.pdhd.server.service;
 
 import com.pdhd.server.pojo.resp.ActivityDTO;
-import com.pdhd.server.req.ActivityReq;
-import com.pdhd.server.req.ListActivityReq;
+import com.pdhd.server.pojo.req.ActivityReq;
+import com.pdhd.server.pojo.req.ListActivityReq;
 
 import java.util.List;
 

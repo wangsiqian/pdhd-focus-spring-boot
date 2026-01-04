@@ -1,6 +1,7 @@
 package com.pdhd.server.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.enums.TypeEnum;
 import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.AllArgsConstructor;
@@ -27,8 +28,8 @@ public class Schedule {
     private Long goalId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private String repeatRule;
-    private String customDays;
+    private RepeatRuleEnum repeatRuleType;
+    private String repeatRuleConfig;
     private String groupId;
     private Long userId;
 

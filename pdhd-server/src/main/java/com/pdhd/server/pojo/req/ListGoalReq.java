@@ -1,8 +1,6 @@
-package com.pdhd.server.req;
+package com.pdhd.server.pojo.req;
 
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 /**
  * @author pdhd

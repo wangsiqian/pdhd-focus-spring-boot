@@ -2,7 +2,7 @@ package com.pdhd.server.controller;
 
 import com.pdhd.server.common.annotation.EnableApiResponse;
 import com.pdhd.server.pojo.resp.UserDTO;
-import com.pdhd.server.req.GetByIdReq;
+import com.pdhd.server.pojo.req.GetByIdReq;
 import com.pdhd.server.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

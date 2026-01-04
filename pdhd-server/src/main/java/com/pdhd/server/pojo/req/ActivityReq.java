@@ -1,4 +1,4 @@
-package com.pdhd.server.req;
+package com.pdhd.server.pojo.req;
 
 import com.pdhd.server.common.enums.TypeEnum;
 import com.pdhd.server.common.enums.ZoneTypeEnum;

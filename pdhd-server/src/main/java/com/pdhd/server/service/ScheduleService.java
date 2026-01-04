@@ -1,8 +1,10 @@
 package com.pdhd.server.service;
 
+import com.pdhd.server.pojo.req.ListPLanReq;
+import com.pdhd.server.pojo.req.ListScheduleReq;
+import com.pdhd.server.pojo.req.ScheduleReq;
+import com.pdhd.server.pojo.resp.PlanDTO;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
-import com.pdhd.server.req.ListScheduleReq;
-import com.pdhd.server.req.ScheduleReq;
 
 import java.util.List;
 
@@ -44,4 +46,9 @@ public interface ScheduleService {
      * @author pdhd
      */
     void delete(Long id);
+
+    /**
+     * 获取时间返回的计划
+     */
+    List<PlanDTO> plan(ListPLanReq req);
 }
