@@ -11,12 +11,16 @@ import com.google.common.collect.Lists;
 import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.exception.ApiException;
 import com.pdhd.server.common.util.ContextUtils;
+import com.pdhd.server.dao.entity.Activity;
 import com.pdhd.server.dao.entity.Schedule;
+import com.pdhd.server.dao.repository.ActivityRepository;
 import com.pdhd.server.dao.repository.ScheduleRepository;
 import com.pdhd.server.exception.ScheduleExceptionEnum;
+import com.pdhd.server.pojo.req.CompleteScheduleReq;
 import com.pdhd.server.pojo.req.ListPLanReq;
 import com.pdhd.server.pojo.req.ListScheduleReq;
 import com.pdhd.server.pojo.req.ScheduleReq;
+import com.pdhd.server.pojo.req.UncompleteScheduleReq;
 import com.pdhd.server.pojo.resp.PlanDTO;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
 import com.pdhd.server.service.ScheduleService;
@@ -40,6 +44,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ScheduleServiceImpl implements ScheduleService {
     private final ScheduleRepository scheduleRepository;
+    private final ActivityRepository activityRepository;
 
     @Override
     public ScheduleDTO getById(Long id) {
@@ -260,6 +265,75 @@ public class ScheduleServiceImpl implements ScheduleService {
                 })
                 .sorted(Comparator.comparing(PlanDTO::getDate))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void complete(CompleteScheduleReq req) {
+        Long currentUserId = ContextUtils.currentUser().getId();
+        log.info("Complete schedule, userId: {}, req: {}", currentUserId, req);
+
+        Schedule schedule = scheduleRepository.getById(req.getScheduleId());
+        if (Objects.isNull(schedule)) {
+            log.warn("Schedule not found: {}", req.getScheduleId());
+            throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
+        }
+
+        if (!Objects.equals(schedule.getUserId(), currentUserId)) {
+            log.warn("Permission denied for schedule: {}, currentUserId: {}", req.getScheduleId(), currentUserId);
+            throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
+        }
+
+        LocalDateTime startDateTime = req.getStartDateTime();
+        LocalDateTime endDateTime = req.getEndDateTime();
+        if (RepeatRuleEnum.NONE == schedule.getRepeatRuleType()) {
+            // 单次计划：使用计划设定的时间
+            startDateTime = schedule.getStartDateTime();
+            endDateTime = schedule.getEndDateTime();
+        }
+
+        // 2. 时间校验：只能完成现在和过去的任务
+        if (startDateTime.isAfter(LocalDateTime.now())) {
+            log.warn("Cannot complete future schedule, req: {}", req);
+            return;
+        }
+
+        // 3. 幂等校验：检查是否已经存在对应的 Activity
+        Integer count = activityRepository.lambdaQuery()
+                .eq(Activity::getScheduleId, req.getScheduleId())
+                .eq(Activity::getStartTime, startDateTime)
+                .count();
+        if (count > 0) {
+            log.info("Activity already exists, skip. req: {}", req);
+            return;
+        }
+
+        // 4. 创建 Activity
+        Activity activity = Activity.builder()
+                .scheduleId(schedule.getId())
+                .title(schedule.getTitle())
+                .content(schedule.getContent())
+                .type(schedule.getType())
+                .zone(schedule.getZone())
+                .goalId(schedule.getGoalId())
+                .startTime(startDateTime)
+                .endTime(endDateTime)
+                .userId(currentUserId)
+                .build();
+
+        activityRepository.save(activity);
+    }
+
+    @Override
+    public void uncomplete(UncompleteScheduleReq req) {
+        Long currentUserId = ContextUtils.currentUser().getId();
+        log.info("Uncomplete schedule, userId: {}, req: {}", currentUserId, req);
+
+        activityRepository.lambdaUpdate()
+                .eq(Activity::getScheduleId, req.getScheduleId())
+                .eq(Activity::getStartTime, req.getStartDateTime())
+                .eq(Activity::getUserId, currentUserId)
+                .set(Activity::getIsDelete, Boolean.TRUE)
+                .update();
     }
 
     private Schedule convertToEntity(ScheduleReq scheduleReq, Long userId) {

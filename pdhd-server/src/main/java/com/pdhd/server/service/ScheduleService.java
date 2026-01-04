@@ -1,8 +1,10 @@
 package com.pdhd.server.service;
 
+import com.pdhd.server.pojo.req.CompleteScheduleReq;
 import com.pdhd.server.pojo.req.ListPLanReq;
 import com.pdhd.server.pojo.req.ListScheduleReq;
 import com.pdhd.server.pojo.req.ScheduleReq;
+import com.pdhd.server.pojo.req.UncompleteScheduleReq;
 import com.pdhd.server.pojo.resp.PlanDTO;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
 
@@ -51,4 +53,14 @@ public interface ScheduleService {
      * 获取时间返回的计划
      */
     List<PlanDTO> plan(ListPLanReq req);
+
+    /**
+     * 完成计划
+     */
+    void complete(CompleteScheduleReq req);
+
+    /**
+     * 取消完成计划
+     */
+    void uncomplete(UncompleteScheduleReq req);
 }

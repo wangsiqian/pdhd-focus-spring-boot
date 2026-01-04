@@ -1,10 +1,12 @@
 package com.pdhd.server.controller;
 
 import com.pdhd.server.common.annotation.EnableApiResponse;
+import com.pdhd.server.pojo.req.CompleteScheduleReq;
 import com.pdhd.server.pojo.req.GetByIdReq;
 import com.pdhd.server.pojo.req.ListPLanReq;
 import com.pdhd.server.pojo.req.ListScheduleReq;
 import com.pdhd.server.pojo.req.ScheduleReq;
+import com.pdhd.server.pojo.req.UncompleteScheduleReq;
 import com.pdhd.server.pojo.resp.PlanDTO;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
 import com.pdhd.server.service.ScheduleService;
@@ -43,6 +45,16 @@ public class ScheduleController {
     @PostMapping("/upsert")
     public ScheduleDTO upsert(@Valid @RequestBody ScheduleReq scheduleReq) {
         return scheduleService.upsert(scheduleReq);
+    }
+
+    @PostMapping("/complete")
+    public void complete(@RequestBody @Valid CompleteScheduleReq req) {
+        scheduleService.complete(req);
+    }
+
+    @PostMapping("/uncomplete")
+    public void uncomplete(@RequestBody @Valid UncompleteScheduleReq req) {
+        scheduleService.uncomplete(req);
     }
 
     @PostMapping("/delete")
