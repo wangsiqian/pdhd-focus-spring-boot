@@ -4,6 +4,7 @@ import com.pdhd.server.common.annotation.EnableApiResponse;
 import com.pdhd.server.pojo.resp.GoalDTO;
 import com.pdhd.server.req.GetByIdReq;
 import com.pdhd.server.req.GoalReq;
+import com.pdhd.server.req.ListGoalReq;
 import com.pdhd.server.service.GoalService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +29,8 @@ public class GoalController {
     }
 
     @PostMapping("/list")
-    public List<GoalDTO> list() {
-        return goalService.list();
+    public List<GoalDTO> list(@Valid @RequestBody ListGoalReq req) {
+        return goalService.list(req);
     }
 
     @PostMapping("/upsert")

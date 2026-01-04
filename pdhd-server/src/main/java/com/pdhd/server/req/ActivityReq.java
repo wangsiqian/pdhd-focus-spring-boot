@@ -1,5 +1,7 @@
 package com.pdhd.server.req;
 
+import com.pdhd.server.common.enums.TypeEnum;
+import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.Data;
 
 import javax.validation.constraints.NotBlank;
@@ -19,8 +21,8 @@ public class ActivityReq {
     private String title;
     
     private String content;
-    private String type;
-    private String zone;
+    private TypeEnum type;
+    private ZoneTypeEnum zone;
     private Long goalId;
     
     @NotNull(message = "开始时间不能为空")

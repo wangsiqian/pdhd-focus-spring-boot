@@ -1,6 +1,8 @@
 package com.pdhd.server.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.pdhd.server.common.enums.ZoneTypeEnum;
+import com.pdhd.server.common.enums.TypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,8 +23,8 @@ public class Activity {
     private Long scheduleId;
     private String title;
     private String content;
-    private String type;
-    private String zone;
+    private TypeEnum type;
+    private ZoneTypeEnum zone;
     private Long goalId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

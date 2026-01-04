@@ -2,6 +2,7 @@ package com.pdhd.server.service;
 
 import com.pdhd.server.pojo.resp.ActivityDTO;
 import com.pdhd.server.req.ActivityReq;
+import com.pdhd.server.req.ListActivityReq;
 
 import java.util.List;
 
@@ -19,12 +20,13 @@ public interface ActivityService {
     ActivityDTO getById(Long id);
 
     /**
-     * 获取当前登录用户的所有实际事项
+     * 获取当前登录用户的实际事项列表
      *
+     * @param req 查询参数
      * @return 实际事项列表
      * @author pdhd
      */
-    List<ActivityDTO> list();
+    List<ActivityDTO> list(ListActivityReq req);
 
     /**
      * 新增或更新实际事项

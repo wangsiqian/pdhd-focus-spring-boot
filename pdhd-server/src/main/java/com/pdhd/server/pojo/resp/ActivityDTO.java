@@ -1,5 +1,7 @@
 package com.pdhd.server.pojo.resp;
 
+import com.pdhd.server.common.enums.TypeEnum;
+import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -13,8 +15,8 @@ public class ActivityDTO {
     private Long scheduleId;
     private String title;
     private String content;
-    private String type;
-    private String zone;
+    private TypeEnum type;
+    private ZoneTypeEnum zone;
     private Long goalId;
     private LocalDateTime startTime;
     private LocalDateTime endTime;

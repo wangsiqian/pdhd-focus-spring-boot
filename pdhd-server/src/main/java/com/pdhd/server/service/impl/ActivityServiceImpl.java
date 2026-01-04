@@ -1,5 +1,6 @@
 package com.pdhd.server.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.pdhd.server.common.exception.ApiException;
 import com.pdhd.server.common.util.ContextUtils;
 import com.pdhd.server.dao.entity.Activity;
@@ -7,11 +8,13 @@ import com.pdhd.server.dao.repository.ActivityRepository;
 import com.pdhd.server.exception.ActivityExceptionEnum;
 import com.pdhd.server.pojo.resp.ActivityDTO;
 import com.pdhd.server.req.ActivityReq;
+import com.pdhd.server.req.ListActivityReq;
 import com.pdhd.server.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -44,13 +47,20 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     @Override
-    public List<ActivityDTO> list() {
+    public List<ActivityDTO> list(ListActivityReq req) {
         Long currentUserId = ContextUtils.currentUser().getId();
+        
+        // 构建查询条件
         List<Activity> activities = activityRepository.lambdaQuery()
                 .eq(Activity::getUserId, currentUserId)
+                .ge(Objects.nonNull(req.getStartTime()), Activity::getStartTime, req.getStartTime())
+                .le(Objects.nonNull(req.getEndTime()), Activity::getEndTime, req.getEndTime())
+                .orderByAsc(Activity::getCreatedAt)
                 .list();
+        
+        // 根据fullDetail参数决定是否返回content字段
         return activities.stream()
-                .map(this::convertToDTO)
+                .map(activity -> convertToDTO(activity, req.getFullDetail()))
                 .collect(Collectors.toList());
     }
 
@@ -119,11 +129,20 @@ public class ActivityServiceImpl implements ActivityService {
     }
 
     private ActivityDTO convertToDTO(Activity activity) {
+        return convertToDTO(activity, true); // 默认返回完整信息
+    }
+    
+    private ActivityDTO convertToDTO(Activity activity, Boolean fullDetail) {
         ActivityDTO dto = new ActivityDTO();
         dto.setId(activity.getId());
         dto.setScheduleId(activity.getScheduleId());
         dto.setTitle(activity.getTitle());
-        dto.setContent(activity.getContent());
+        
+        // 根据fullDetail参数决定是否返回content字段
+        if (fullDetail != null && fullDetail) {
+            dto.setContent(activity.getContent());
+        }
+        
         dto.setType(activity.getType());
         dto.setZone(activity.getZone());
         dto.setGoalId(activity.getGoalId());

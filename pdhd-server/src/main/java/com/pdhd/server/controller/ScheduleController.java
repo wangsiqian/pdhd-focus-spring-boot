@@ -3,6 +3,7 @@ package com.pdhd.server.controller;
 import com.pdhd.server.common.annotation.EnableApiResponse;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
 import com.pdhd.server.req.GetByIdReq;
+import com.pdhd.server.req.ListScheduleReq;
 import com.pdhd.server.req.ScheduleReq;
 import com.pdhd.server.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,8 @@ public class ScheduleController {
     }
 
     @PostMapping("/list")
-    public List<ScheduleDTO> list() {
-        return scheduleService.list();
+    public List<ScheduleDTO> list(@Valid @RequestBody ListScheduleReq req) {
+        return scheduleService.list(req);
     }
 
     @PostMapping("/upsert")

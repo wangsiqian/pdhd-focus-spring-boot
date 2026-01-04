@@ -4,6 +4,7 @@ import com.pdhd.server.common.annotation.EnableApiResponse;
 import com.pdhd.server.pojo.resp.ActivityDTO;
 import com.pdhd.server.req.ActivityReq;
 import com.pdhd.server.req.GetByIdReq;
+import com.pdhd.server.req.ListActivityReq;
 import com.pdhd.server.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +29,8 @@ public class ActivityController {
     }
 
     @PostMapping("/list")
-    public List<ActivityDTO> list() {
-        return activityService.list();
+    public List<ActivityDTO> list(@Valid @RequestBody ListActivityReq req) {
+        return activityService.list(req);
     }
 
     @PostMapping("/upsert")

@@ -1,6 +1,7 @@
 package com.pdhd.server.service;
 
 import com.pdhd.server.pojo.resp.ScheduleDTO;
+import com.pdhd.server.req.ListScheduleReq;
 import com.pdhd.server.req.ScheduleReq;
 
 import java.util.List;
@@ -19,12 +20,13 @@ public interface ScheduleService {
     ScheduleDTO getById(Long id);
 
     /**
-     * 获取当前登录用户的所有计划
+     * 获取当前登录用户的计划列表
      *
+     * @param req 查询参数
      * @return 计划列表
      * @author pdhd
      */
-    List<ScheduleDTO> list();
+    List<ScheduleDTO> list(ListScheduleReq req);
 
     /**
      * 新增或更新计划

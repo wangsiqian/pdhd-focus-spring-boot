@@ -37,7 +37,6 @@ CREATE TABLE `schedule`
     `goal_id`     BIGINT COMMENT '关联目标ID',
     `start_time`  DATETIME     NOT NULL COMMENT '开始时间',
     `end_time`    DATETIME     NOT NULL COMMENT '结束时间',
-    `status`      TINYINT     DEFAULT 0 COMMENT '状态(0:未完成,1:已完成)',
     `repeat_rule` VARCHAR(50) DEFAULT 'NONE' COMMENT '重复规则(NONE,DAILY,WEEKDAY,CUSTOM)',
     `custom_days` VARCHAR(50) COMMENT '自定义重复天数',
     `group_id`    VARCHAR(100) COMMENT '重复任务组ID',
