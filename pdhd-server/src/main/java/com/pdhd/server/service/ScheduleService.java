@@ -1,5 +1,6 @@
 package com.pdhd.server.service;
 
+import com.pdhd.server.pojo.req.BatchCompleteScheduleReq;
 import com.pdhd.server.pojo.req.CompleteScheduleReq;
 import com.pdhd.server.pojo.req.ListPLanReq;
 import com.pdhd.server.pojo.req.ListScheduleReq;
@@ -58,6 +59,11 @@ public interface ScheduleService {
      * 完成计划
      */
     void complete(CompleteScheduleReq req);
+
+    /**
+     * 批量完成计划
+     */
+    void batchComplete(BatchCompleteScheduleReq req);
 
     /**
      * 取消完成计划

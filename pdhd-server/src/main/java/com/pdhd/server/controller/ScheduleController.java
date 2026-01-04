@@ -1,6 +1,7 @@
 package com.pdhd.server.controller;
 
 import com.pdhd.server.common.annotation.EnableApiResponse;
+import com.pdhd.server.pojo.req.BatchCompleteScheduleReq;
 import com.pdhd.server.pojo.req.CompleteScheduleReq;
 import com.pdhd.server.pojo.req.GetByIdReq;
 import com.pdhd.server.pojo.req.ListPLanReq;
@@ -50,6 +51,11 @@ public class ScheduleController {
     @PostMapping("/complete")
     public void complete(@RequestBody @Valid CompleteScheduleReq req) {
         scheduleService.complete(req);
+    }
+
+    @PostMapping("/complete/batch")
+    public void batchComplete(@RequestBody @Valid BatchCompleteScheduleReq req) {
+        scheduleService.batchComplete(req);
     }
 
     @PostMapping("/uncomplete")

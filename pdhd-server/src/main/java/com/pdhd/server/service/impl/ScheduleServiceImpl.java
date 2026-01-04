@@ -16,8 +16,10 @@ import com.pdhd.server.dao.entity.Schedule;
 import com.pdhd.server.dao.repository.ActivityRepository;
 import com.pdhd.server.dao.repository.ScheduleRepository;
 import com.pdhd.server.exception.ScheduleExceptionEnum;
+import com.pdhd.server.pojo.req.BatchCompleteScheduleReq;
 import com.pdhd.server.pojo.req.CompleteScheduleReq;
 import com.pdhd.server.pojo.req.ListPLanReq;
+import java.util.function.Function;
 import com.pdhd.server.pojo.req.ListScheduleReq;
 import com.pdhd.server.pojo.req.ScheduleReq;
 import com.pdhd.server.pojo.req.UncompleteScheduleReq;
@@ -269,58 +271,114 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public void complete(CompleteScheduleReq req) {
+        BatchCompleteScheduleReq batchReq = new BatchCompleteScheduleReq();
+        batchReq.setSchedules(Collections.singletonList(req));
+        batchComplete(batchReq);
+    }
+
+    @Override
+    public void batchComplete(BatchCompleteScheduleReq req) {
         Long currentUserId = ContextUtils.currentUser().getId();
-        log.info("Complete schedule, userId: {}, req: {}", currentUserId, req);
+        log.info("Batch complete schedules, userId: {}, count: {}", currentUserId,
+                req.getSchedules() != null ? req.getSchedules().size() : 0);
 
-        Schedule schedule = scheduleRepository.getById(req.getScheduleId());
-        if (Objects.isNull(schedule)) {
-            log.warn("Schedule not found: {}", req.getScheduleId());
-            throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
-        }
-
-        if (!Objects.equals(schedule.getUserId(), currentUserId)) {
-            log.warn("Permission denied for schedule: {}, currentUserId: {}", req.getScheduleId(), currentUserId);
-            throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
-        }
-
-        LocalDateTime startDateTime = req.getStartDateTime();
-        LocalDateTime endDateTime = req.getEndDateTime();
-        if (RepeatRuleEnum.NONE == schedule.getRepeatRuleType()) {
-            // 单次计划：使用计划设定的时间
-            startDateTime = schedule.getStartDateTime();
-            endDateTime = schedule.getEndDateTime();
-        }
-
-        // 2. 时间校验：只能完成现在和过去的任务
-        if (startDateTime.isAfter(LocalDateTime.now())) {
-            log.warn("Cannot complete future schedule, req: {}", req);
+        if (CollUtil.isEmpty(req.getSchedules())) {
             return;
         }
 
-        // 3. 幂等校验：检查是否已经存在对应的 Activity
-        Integer count = activityRepository.lambdaQuery()
-                .eq(Activity::getScheduleId, req.getScheduleId())
-                .eq(Activity::getStartTime, startDateTime)
-                .count();
-        if (count > 0) {
-            log.info("Activity already exists, skip. req: {}", req);
+        // 1. 获取所有 Schedule ID并查询
+        Set<Long> scheduleIds = req.getSchedules().stream()
+                .map(CompleteScheduleReq::getScheduleId)
+                .collect(Collectors.toSet());
+
+        List<Schedule> schedules = scheduleRepository.listByIds(scheduleIds);
+        Map<Long, Schedule> scheduleMap = schedules.stream()
+                .collect(Collectors.toMap(Schedule::getId, Function.identity()));
+
+        // 用于防止本次请求内部的重复（比如请求里同一个计划完成两次）以及后续DB查重
+        Set<String> checkKeys = new HashSet<>();
+        List<Activity> pendingActivities = new ArrayList<>();
+
+        for (CompleteScheduleReq item : req.getSchedules()) {
+            Schedule schedule = scheduleMap.get(item.getScheduleId());
+            if (schedule == null) {
+                log.warn("Schedule not found: {}", item.getScheduleId());
+                throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
+            }
+            if (!Objects.equals(schedule.getUserId(), currentUserId)) {
+                log.warn("Permission denied for schedule: {}, currentUserId: {}", item.getScheduleId(), currentUserId);
+                throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
+            }
+
+            // 时间处理逻辑
+            LocalDateTime startDateTime = item.getStartDateTime();
+            LocalDateTime endDateTime = item.getEndDateTime();
+
+            if (RepeatRuleEnum.NONE == schedule.getRepeatRuleType()) {
+                // 单次计划：使用计划设定的时间
+                startDateTime = schedule.getStartDateTime();
+                endDateTime = schedule.getEndDateTime();
+            }
+
+            if (startDateTime == null || endDateTime == null) {
+                log.warn("Recurring schedule complete requires start/end time. req: {}", item);
+                throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
+            }
+
+            // 时间校验：只能完成现在和过去的任务
+            if (startDateTime.isAfter(LocalDateTime.now())) {
+                log.warn("Cannot complete future schedule: {}", item);
+                continue;
+            }
+
+            // 构造 Key 检查是否已包含在本次待保存列表中
+            String key = schedule.getId() + "_" + startDateTime.toString();
+            if (checkKeys.contains(key)) {
+                continue;
+            }
+            checkKeys.add(key);
+
+            Activity activity = Activity.builder()
+                    .scheduleId(schedule.getId())
+                    .title(schedule.getTitle())
+                    .content(schedule.getContent())
+                    .type(schedule.getType())
+                    .zone(schedule.getZone())
+                    .goalId(schedule.getGoalId())
+                    .startTime(startDateTime)
+                    .endTime(endDateTime)
+                    .userId(currentUserId)
+                    .build();
+
+            pendingActivities.add(activity);
+        }
+
+        if (CollUtil.isEmpty(pendingActivities)) {
             return;
         }
 
-        // 4. 创建 Activity
-        Activity activity = Activity.builder()
-                .scheduleId(schedule.getId())
-                .title(schedule.getTitle())
-                .content(schedule.getContent())
-                .type(schedule.getType())
-                .zone(schedule.getZone())
-                .goalId(schedule.getGoalId())
-                .startTime(startDateTime)
-                .endTime(endDateTime)
-                .userId(currentUserId)
-                .build();
+        Set<LocalDateTime> startTimes = pendingActivities.stream()
+                .map(Activity::getStartTime)
+                .collect(Collectors.toSet());
 
-        activityRepository.save(activity);
+        List<Activity> existingActivities = activityRepository.lambdaQuery()
+                .in(Activity::getScheduleId, scheduleIds)
+                .in(Activity::getStartTime, startTimes)
+                .eq(Activity::getUserId, currentUserId)
+                .list();
+
+        Set<String> existingKeys = existingActivities.stream()
+                .map(a -> a.getScheduleId() + "_" + a.getStartTime().toString())
+                .collect(Collectors.toSet());
+
+        List<Activity> finalSaveList = pendingActivities.stream()
+                .filter(a -> !existingKeys.contains(a.getScheduleId() + "_" + a.getStartTime().toString()))
+                .collect(Collectors.toList());
+
+        if (CollUtil.isNotEmpty(finalSaveList)) {
+            activityRepository.saveBatch(finalSaveList);
+            log.info("Batch save activities success, count: {}", finalSaveList.size());
+        }
     }
 
     @Override
