@@ -7,6 +7,7 @@ import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.util.BooleanUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.pdhd.server.common.enums.RepeatRuleEnum;
 import com.pdhd.server.common.exception.ApiException;
 import com.pdhd.server.common.util.ContextUtils;
@@ -90,10 +91,38 @@ public class ScheduleServiceImpl implements ScheduleService {
         result.addAll(expandRepeatSchedules(repeatSchedules, req.getStartDateTime(), req.getEndDateTime(),
                 req.getFullDetail()));
 
-        // 4. 排序
+        // 4. 补充完成状态
+        fillCompletedStatus(result, currentUserId);
+
+        // 5. 排序
         return result.stream()
                 .sorted(Comparator.comparing(ScheduleDTO::getStartDateTime))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 补充当天计划是否完成
+     */
+        if (CollUtil.isEmpty(schedules)) {
+            return;
+        }
+        Set<Long> scheduleIds = Sets.newHashSetWithExpectedSize(schedules.size());
+        Set<LocalDateTime> startTimes = Sets.newHashSetWithExpectedSize(schedules.size());
+        schedules.forEach(dto -> {
+            scheduleIds.add(dto.getId());
+            startTimes.add(dto.getStartDateTime());
+        });
+        List<Activity> activities = activityRepository.lambdaQuery()
+                .in(Activity::getScheduleId, scheduleIds)
+                .in(Activity::getStartTime, startTimes)
+                .eq(Activity::getUserId, currentUserId)
+                .list();
+        Set<String> completedKeys = activities.stream()
+                .map(activity -> buildActivityKey(activity.getScheduleId(), activity.getStartTime()))
+                .collect(Collectors.toSet());
+        schedules.forEach(dto -> dto.setCompleted(completedKeys.contains(
+                buildActivityKey(dto.getId(), dto.getStartDateTime())
+        )));
     }
 
     private List<ScheduleDTO> expandRepeatSchedules(List<Schedule> repeatSchedules, LocalDateTime queryStart,
