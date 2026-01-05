@@ -59,11 +59,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .filter(schedule -> !schedule.getStartDateTime().isAfter(now)
                         && schedule.getEndDateTime().isAfter(now))
                 .max(Comparator.comparing(ScheduleDTO::getStartDateTime));
-        if (currentSchedule.isPresent()) {
-            return buildFocusTask(currentSchedule.get());
-        }
-
-        return new FocusTaskResp();
+        return currentSchedule.map(this::buildFocusTask).orElse(null);
     }
 
     private FocusTaskResp buildNextFocus(Long currentUserId, LocalDateTime now) {
@@ -81,11 +77,7 @@ public class DashboardServiceImpl implements DashboardService {
         Optional<ScheduleDTO> nextSchedule = listSchedules(now, rangeEnd).stream()
                 .filter(schedule -> schedule.getStartDateTime().isAfter(now))
                 .min(Comparator.comparing(ScheduleDTO::getStartDateTime));
-        if (nextSchedule.isPresent()) {
-            return buildFocusTask(nextSchedule.get());
-        }
-
-        return new FocusTaskResp();
+        return nextSchedule.map(this::buildFocusTask).orElse(null);
     }
 
     private List<ScheduleDTO> listSchedules(LocalDateTime start, LocalDateTime end) {
