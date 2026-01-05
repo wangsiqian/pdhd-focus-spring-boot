@@ -1,33 +1,29 @@
-package com.pdhd.server.pojo.req;
+package com.pdhd.server.pojo.resp;
 
 import com.pdhd.server.common.enums.TypeEnum;
 import com.pdhd.server.common.enums.ZoneTypeEnum;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 /**
- * @author pdhd
+ * @author wangsiqian
  */
 @Data
-public class ActivityReq {
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class FocusTaskResp {
     private Long id;
-    
     private Long scheduleId;
-    
-    @NotBlank(message = "实际事项标题不能为空")
     private String title;
-    
     private String content;
     private TypeEnum type;
     private ZoneTypeEnum zone;
     private Long goalId;
-    
-    @NotNull(message = "开始时间不能为空")
     private LocalDateTime startDateTime;
-    
-    @NotNull(message = "结束时间不能为空")
     private LocalDateTime endDateTime;
 }

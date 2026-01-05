@@ -107,8 +107,8 @@ public class ActivityServiceImpl implements ActivityService {
                 .type(activityReq.getType())
                 .zone(activityReq.getZone())
                 .goalId(activityReq.getGoalId())
-                .startDateTime(activityReq.getStartTime())
-                .endDateTime(activityReq.getEndTime())
+                .startDateTime(activityReq.getStartDateTime())
+                .endDateTime(activityReq.getEndDateTime())
                 .userId(userId)
                 .build();
     }
