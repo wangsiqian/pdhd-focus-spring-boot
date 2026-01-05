@@ -29,7 +29,7 @@ public final class JwtUtils {
                 .setSubject(subject)
                 .setExpiration(
                         new Date(System.currentTimeMillis() + JwtConstants.EXPIRATION_MILLIS))
-                .signWith(SignatureAlgorithm.HS512, JwtConstants.SECRET)
+                .signWith(SignatureAlgorithm.HS512, JwtConstants.SECRET.getBytes(StandardCharsets.UTF_8))
                 .compact();
     }
 
@@ -40,7 +40,7 @@ public final class JwtUtils {
         return Jwts.builder()
                 .setClaims(claims)
                 .setExpiration(new Date(System.currentTimeMillis() + JwtConstants.EXPIRATION_MILLIS))
-                .signWith(SignatureAlgorithm.HS512, JwtConstants.SECRET)
+                .signWith(SignatureAlgorithm.HS512, JwtConstants.SECRET.getBytes(StandardCharsets.UTF_8))
                 .compact();
     }
 

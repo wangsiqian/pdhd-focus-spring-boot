@@ -35,8 +35,7 @@ public class SecurityConfiguration extends BaseSecurityConfiguration {
         String[] authorities = Arrays.stream(UserTypeEnum.values()).map(Enum::name).toArray(String[]::new);
         http.authorizeRequests().antMatchers(HttpMethod.OPTIONS, "/webApi/**")
                 .permitAll()
-                .antMatchers("/health/check").permitAll()
-                .antMatchers("/api/**").permitAll()
+                .antMatchers("/health/check", "/webApi/users/login", "/api/**").permitAll()
                 .antMatchers("/webApi/**").hasAnyAuthority(authorities)
                 .anyRequest()
                 .authenticated()
