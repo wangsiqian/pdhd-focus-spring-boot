@@ -5,7 +5,6 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.util.BooleanUtil;
-
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
 import com.pdhd.server.common.enums.RepeatRuleEnum;
@@ -16,19 +15,14 @@ import com.pdhd.server.dao.entity.Schedule;
 import com.pdhd.server.dao.repository.ActivityRepository;
 import com.pdhd.server.dao.repository.ScheduleRepository;
 import com.pdhd.server.exception.ScheduleExceptionEnum;
-import com.pdhd.server.pojo.req.BatchCompleteScheduleReq;
-import com.pdhd.server.pojo.req.CompleteScheduleReq;
-import com.pdhd.server.pojo.req.ListPLanReq;
-import java.util.function.Function;
-import com.pdhd.server.pojo.req.ListScheduleReq;
-import com.pdhd.server.pojo.req.ScheduleReq;
-import com.pdhd.server.pojo.req.UncompleteScheduleReq;
+import com.pdhd.server.pojo.req.*;
 import com.pdhd.server.pojo.resp.PlanDTO;
 import com.pdhd.server.pojo.resp.ScheduleDTO;
 import com.pdhd.server.service.ScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -36,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -102,7 +97,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     private List<ScheduleDTO> expandRepeatSchedules(List<Schedule> repeatSchedules, LocalDateTime queryStart,
-            LocalDateTime queryEnd, Boolean fullDetail) {
+                                                    LocalDateTime queryEnd, Boolean fullDetail) {
         List<ScheduleDTO> instances = new ArrayList<>();
 
         // 遍历每一天
@@ -270,6 +265,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void complete(CompleteScheduleReq req) {
         BatchCompleteScheduleReq batchReq = new BatchCompleteScheduleReq();
         batchReq.setSchedules(Collections.singletonList(req));
@@ -277,6 +273,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void batchComplete(BatchCompleteScheduleReq req) {
         Long currentUserId = ContextUtils.currentUser().getId();
         log.info("Batch complete schedules, userId: {}, count: {}", currentUserId,
@@ -291,7 +288,10 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .map(CompleteScheduleReq::getScheduleId)
                 .collect(Collectors.toSet());
 
-        List<Schedule> schedules = scheduleRepository.listByIds(scheduleIds);
+        List<Schedule> schedules = scheduleRepository.lambdaQuery()
+                .in(Schedule::getId, scheduleIds)
+                .eq(Schedule::getUserId, currentUserId)
+                .list();
         Map<Long, Schedule> scheduleMap = schedules.stream()
                 .collect(Collectors.toMap(Schedule::getId, Function.identity()));
 
@@ -332,7 +332,7 @@ public class ScheduleServiceImpl implements ScheduleService {
             }
 
             // 构造 Key 检查是否已包含在本次待保存列表中
-            String key = schedule.getId() + "_" + startDateTime.toString();
+            String key = buildActivityKey(schedule.getId(), startDateTime);
             if (checkKeys.contains(key)) {
                 continue;
             }
@@ -368,11 +368,11 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .list();
 
         Set<String> existingKeys = existingActivities.stream()
-                .map(a -> a.getScheduleId() + "_" + a.getStartTime().toString())
+                .map(this::buildActivityKey)
                 .collect(Collectors.toSet());
 
         List<Activity> finalSaveList = pendingActivities.stream()
-                .filter(a -> !existingKeys.contains(a.getScheduleId() + "_" + a.getStartTime().toString()))
+                .filter(a -> !existingKeys.contains(buildActivityKey(a)))
                 .collect(Collectors.toList());
 
         if (CollUtil.isNotEmpty(finalSaveList)) {
@@ -411,6 +411,14 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .groupId(scheduleReq.getGroupId())
                 .userId(userId)
                 .build();
+    }
+
+    private String buildActivityKey(Activity activity) {
+        return buildActivityKey(activity.getScheduleId(), activity.getStartTime());
+    }
+
+    private String buildActivityKey(Long scheduleId, LocalDateTime startDateTime) {
+        return scheduleId + "_" + startDateTime.toString();
     }
 
     private ScheduleDTO convertToDTO(Schedule schedule) {
