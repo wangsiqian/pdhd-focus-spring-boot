@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
 import org.springframework.stereotype.Component;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * 自动填充实体时间的字段
@@ -15,12 +15,12 @@ import java.util.Date;
 public class GlobalMetaObjectHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) {
-        strictInsertFill(metaObject, "createdAt", Date.class, new Date());
-        strictInsertFill(metaObject, "updatedAt", Date.class, new Date());
+        strictInsertFill(metaObject, "createdAt", LocalDateTime.class, LocalDateTime.now());
+        strictInsertFill(metaObject, "updatedAt", LocalDateTime.class, LocalDateTime.now());
     }
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        strictUpdateFill(metaObject, "createdAt", Date.class, new Date());
+        strictUpdateFill(metaObject, "updatedAt", LocalDateTime.class, LocalDateTime.now());
     }
 }
