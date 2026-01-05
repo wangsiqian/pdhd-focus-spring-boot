@@ -1,8 +1,8 @@
 package com.pdhd.server.dao.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.pdhd.server.common.enums.ZoneTypeEnum;
 import com.pdhd.server.common.enums.TypeEnum;
+import com.pdhd.server.common.enums.ZoneTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,8 +26,8 @@ public class Activity {
     private TypeEnum type;
     private ZoneTypeEnum zone;
     private Long goalId;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
     private Long userId;
 
     @TableLogic(value = "0", delval = "1")

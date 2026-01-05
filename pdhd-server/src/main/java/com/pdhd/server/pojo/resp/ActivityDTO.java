@@ -18,8 +18,8 @@ public class ActivityDTO {
     private TypeEnum type;
     private ZoneTypeEnum zone;
     private Long goalId;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private LocalDateTime startDateTime;
+    private LocalDateTime endDateTime;
     private Long userId;
     private LocalDateTime createdAt;
 }

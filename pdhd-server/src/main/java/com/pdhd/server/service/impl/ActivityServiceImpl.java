@@ -51,8 +51,8 @@ public class ActivityServiceImpl implements ActivityService {
         // 构建查询条件
         List<Activity> activities = activityRepository.lambdaQuery()
                 .eq(Activity::getUserId, currentUserId)
-                .ge(Objects.nonNull(req.getStartTime()), Activity::getStartTime, req.getStartTime())
-                .le(Objects.nonNull(req.getEndTime()), Activity::getEndTime, req.getEndTime())
+                .ge(Objects.nonNull(req.getStartTime()), Activity::getStartDateTime, req.getStartTime())
+                .le(Objects.nonNull(req.getEndTime()), Activity::getEndDateTime, req.getEndTime())
                 .orderByAsc(Activity::getCreatedAt)
                 .list();
         
@@ -107,8 +107,8 @@ public class ActivityServiceImpl implements ActivityService {
                 .type(activityReq.getType())
                 .zone(activityReq.getZone())
                 .goalId(activityReq.getGoalId())
-                .startTime(activityReq.getStartTime())
-                .endTime(activityReq.getEndTime())
+                .startDateTime(activityReq.getStartTime())
+                .endDateTime(activityReq.getEndTime())
                 .userId(userId)
                 .build();
     }
@@ -131,8 +131,8 @@ public class ActivityServiceImpl implements ActivityService {
         dto.setType(activity.getType());
         dto.setZone(activity.getZone());
         dto.setGoalId(activity.getGoalId());
-        dto.setStartTime(activity.getStartTime());
-        dto.setEndTime(activity.getEndTime());
+        dto.setStartDateTime(activity.getStartDateTime());
+        dto.setEndDateTime(activity.getEndDateTime());
         dto.setUserId(activity.getUserId());
         dto.setCreatedAt(activity.getCreatedAt());
         return dto;

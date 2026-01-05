@@ -115,11 +115,11 @@ public class ScheduleServiceImpl implements ScheduleService {
         });
         List<Activity> activities = activityRepository.lambdaQuery()
                 .in(Activity::getScheduleId, scheduleIds)
-                .in(Activity::getStartTime, startTimes)
+                .in(Activity::getStartDateTime, startTimes)
                 .eq(Activity::getUserId, currentUserId)
                 .list();
         Set<String> completedKeys = activities.stream()
-                .map(activity -> buildActivityKey(activity.getScheduleId(), activity.getStartTime()))
+                .map(activity -> buildActivityKey(activity.getScheduleId(), activity.getStartDateTime()))
                 .collect(Collectors.toSet());
         schedules.forEach(dto -> dto.setCompleted(completedKeys.contains(
                 buildActivityKey(dto.getId(), dto.getStartDateTime())
@@ -362,8 +362,8 @@ public class ScheduleServiceImpl implements ScheduleService {
                     .type(schedule.getType())
                     .zone(schedule.getZone())
                     .goalId(schedule.getGoalId())
-                    .startTime(startDateTime)
-                    .endTime(endDateTime)
+                    .startDateTime(startDateTime)
+                    .endDateTime(endDateTime)
                     .userId(currentUserId)
                     .build();
 
@@ -375,12 +375,12 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
 
         Set<LocalDateTime> startTimes = pendingActivities.stream()
-                .map(Activity::getStartTime)
+                .map(Activity::getStartDateTime)
                 .collect(Collectors.toSet());
 
         List<Activity> existingActivities = activityRepository.lambdaQuery()
                 .in(Activity::getScheduleId, scheduleIds)
-                .in(Activity::getStartTime, startTimes)
+                .in(Activity::getStartDateTime, startTimes)
                 .eq(Activity::getUserId, currentUserId)
                 .list();
 
@@ -405,7 +405,7 @@ public class ScheduleServiceImpl implements ScheduleService {
 
         activityRepository.lambdaUpdate()
                 .eq(Activity::getScheduleId, req.getScheduleId())
-                .eq(Activity::getStartTime, req.getStartDateTime())
+                .eq(Activity::getStartDateTime, req.getStartDateTime())
                 .eq(Activity::getUserId, currentUserId)
                 .set(Activity::getIsDelete, Boolean.TRUE)
                 .update();
@@ -431,7 +431,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     private String buildActivityKey(Activity activity) {
-        return buildActivityKey(activity.getScheduleId(), activity.getStartTime());
+        return buildActivityKey(activity.getScheduleId(), activity.getStartDateTime());
     }
 
     private String buildActivityKey(Long scheduleId, LocalDateTime startDateTime) {
