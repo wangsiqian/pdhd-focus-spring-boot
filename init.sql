@@ -6,9 +6,10 @@ CREATE TABLE `user`
     `id`         BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '用户ID',
     `username`   VARCHAR(50)  NOT NULL UNIQUE COMMENT '用户名',
     `password`   VARCHAR(100) NOT NULL COMMENT '密码',
-    `is_delete`  TINYINT DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
-    `created_at` DATETIME COMMENT '创建时间',
-    `updated_at` DATETIME COMMENT '更新时间'
+    `is_delete`  TINYINT  DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    INDEX `idx_username` (`username`)
 ) COMMENT '用户表';
 
 -- 目标表
@@ -17,12 +18,12 @@ CREATE TABLE `goal`
     `id`         BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '目标ID',
     `title`      VARCHAR(255) NOT NULL COMMENT '目标标题',
     `color`      VARCHAR(50) COMMENT '颜色标识',
-    `status`     TINYINT DEFAULT 1 COMMENT '状态(1:启用,0:禁用)',
-    `progress`   INT     DEFAULT 0 COMMENT '进度(0-100)',
+    `status`     TINYINT  DEFAULT 1 COMMENT '状态(1:启用,0:禁用)',
+    `progress`   INT      DEFAULT 0 COMMENT '进度(0-100)',
     `user_id`    BIGINT       NOT NULL COMMENT '所属用户ID',
-    `is_delete`  TINYINT DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
-    `created_at` DATETIME COMMENT '创建时间',
-    `updated_at` DATETIME COMMENT '更新时间',
+    `is_delete`  TINYINT  DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX `idx_user_id` (`user_id`)
 ) COMMENT '目标表';
 
@@ -44,8 +45,8 @@ CREATE TABLE `schedule`
     `group_id`           VARCHAR(100) COMMENT '重复任务组ID',
     `user_id`            BIGINT       NOT NULL COMMENT '所属用户ID',
     `is_delete`          TINYINT     DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
-    `created_at`         DATETIME COMMENT '创建时间',
-    `updated_at`         DATETIME COMMENT '更新时间',
+    `created_at`         DATETIME    DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`         DATETIME    DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX `idx_user_id` (`user_id`),
     INDEX `idx_goal_id` (`goal_id`),
     INDEX `idx_start_date_time` (`start_date_time`),
@@ -65,12 +66,12 @@ CREATE TABLE `activity`
     `start_date_time` DATETIME     NOT NULL COMMENT '开始时间',
     `end_date_time`   DATETIME     NOT NULL COMMENT '结束时间',
     `user_id`         BIGINT       NOT NULL COMMENT '所属用户ID',
-    `is_delete`       TINYINT DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
-    `created_at`      DATETIME COMMENT '创建时间',
-    `updated_at`      DATETIME COMMENT '更新时间',
+    `is_delete`       TINYINT  DEFAULT 0 COMMENT '逻辑删除(0:未删除,1:已删除)',
+    `created_at`      DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_at`      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     INDEX `idx_user_id` (`user_id`),
     INDEX `idx_schedule_id` (`schedule_id`),
     INDEX `idx_goal_id` (`goal_id`),
-    INDEX `idx_start_time` (`start_time`),
-    INDEX `idx_end_time` (`end_time`)
+    INDEX `idx_start_time` (`start_date_time`),
+    INDEX `idx_end_time` (`end_date_time`)
 ) COMMENT '实际事项表';
