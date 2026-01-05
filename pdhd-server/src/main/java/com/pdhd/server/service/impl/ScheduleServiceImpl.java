@@ -153,31 +153,18 @@ public class ScheduleServiceImpl implements ScheduleService {
         log.info("Upsert schedule, userId: {}, req: {}", currentUserId, scheduleReq);
 
         if (scheduleReq.getId() != null) {
-            // 更新操作
-            Schedule existingSchedule = scheduleRepository.getById(scheduleReq.getId());
+            Schedule existingSchedule = scheduleRepository.lambdaQuery()
+                    .eq(Schedule::getId, scheduleReq.getId())
+                    .eq(Schedule::getUserId, currentUserId)
+                    .one();
             if (Objects.isNull(existingSchedule)) {
                 log.warn("Schedule not found: {}", scheduleReq.getId());
                 throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
             }
-
-            // 检查计划是否属于当前用户
-            if (!Objects.equals(existingSchedule.getUserId(), currentUserId)) {
-                log.warn("Permission denied for schedule: {}, currentUserId: {}", scheduleReq.getId(), currentUserId);
-                throw new ApiException(ScheduleExceptionEnum.SCHEDULE_NOT_FOUND);
-            }
-
-            Schedule schedule = convertToEntity(scheduleReq, currentUserId);
-            schedule.setId(scheduleReq.getId());
-            schedule.setUserId(currentUserId);
-            scheduleRepository.updateById(schedule);
-            return convertToDTO(schedule);
-        } else {
-            // 创建操作
-            Schedule schedule = convertToEntity(scheduleReq, currentUserId);
-            schedule.setUserId(currentUserId);
-            scheduleRepository.save(schedule);
-            return convertToDTO(schedule);
         }
+        Schedule schedule = convertToEntity(scheduleReq, currentUserId);
+        scheduleRepository.saveOrUpdate(schedule);
+        return convertToDTO(schedule);
     }
 
     @Override

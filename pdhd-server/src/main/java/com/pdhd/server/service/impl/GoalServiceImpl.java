@@ -5,9 +5,9 @@ import com.pdhd.server.common.util.ContextUtils;
 import com.pdhd.server.dao.entity.Goal;
 import com.pdhd.server.dao.repository.GoalRepository;
 import com.pdhd.server.exception.GoalExceptionEnum;
-import com.pdhd.server.pojo.resp.GoalDTO;
 import com.pdhd.server.pojo.req.GoalReq;
 import com.pdhd.server.pojo.req.ListGoalReq;
+import com.pdhd.server.pojo.resp.GoalDTO;
 import com.pdhd.server.service.GoalService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,13 +47,13 @@ public class GoalServiceImpl implements GoalService {
     @Override
     public List<GoalDTO> list(ListGoalReq req) {
         Long currentUserId = ContextUtils.currentUser().getId();
-        
+
         // 构建查询条件
         List<Goal> goals = goalRepository.lambdaQuery()
                 .eq(Goal::getUserId, currentUserId)
                 .orderByAsc(Goal::getCreatedAt)
                 .list();
-        
+
         // 根据fullDetail参数决定是否返回content字段（对Goal而言，目前所有字段都返回）
         return goals.stream()
                 .map(goal -> convertToDTO(goal, req.getFullDetail()))
@@ -64,31 +64,18 @@ public class GoalServiceImpl implements GoalService {
     public GoalDTO upsert(GoalReq goalReq) {
         Long currentUserId = ContextUtils.currentUser().getId();
         if (goalReq.getId() != null) {
-            // 更新操作
-            Goal existingGoal = goalRepository.getById(goalReq.getId());
+            Goal existingGoal = goalRepository.lambdaQuery()
+                    .eq(Goal::getId, goalReq.getId())
+                    .eq(Goal::getUserId, currentUserId)
+                    .one();
             if (Objects.isNull(existingGoal)) {
-                log.info("目标不存在：{}", goalReq.getId());
                 throw new ApiException(GoalExceptionEnum.GOAL_NOT_FOUND);
             }
-
-            // 检查目标是否属于当前用户
-            if (!Objects.equals(existingGoal.getUserId(), currentUserId)) {
-                log.info("用户无权限修改此目标：{}", goalReq.getId());
-                throw new ApiException(GoalExceptionEnum.GOAL_NOT_FOUND);
-            }
-
-            Goal goal = convertToEntity(goalReq, currentUserId);
-            goal.setId(goalReq.getId());
-            goal.setUserId(currentUserId); // 确保不会更改用户ID
-            goalRepository.updateById(goal);
-            return convertToDTO(goal);
-        } else {
-            // 创建操作
-            Goal goal = convertToEntity(goalReq, currentUserId);
-            goal.setUserId(currentUserId);
-            goalRepository.save(goal);
-            return convertToDTO(goal);
         }
+
+        Goal goal = convertToEntity(goalReq, currentUserId);
+        goalRepository.saveOrUpdate(goal);
+        return convertToDTO(goal);
     }
 
     @Override
@@ -123,7 +110,7 @@ public class GoalServiceImpl implements GoalService {
     private GoalDTO convertToDTO(Goal goal) {
         return convertToDTO(goal, true); // 默认返回完整信息
     }
-    
+
     private GoalDTO convertToDTO(Goal goal, Boolean fullDetail) {
         GoalDTO dto = new GoalDTO();
         dto.setId(goal.getId());

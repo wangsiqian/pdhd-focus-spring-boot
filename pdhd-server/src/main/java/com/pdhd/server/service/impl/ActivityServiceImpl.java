@@ -66,31 +66,18 @@ public class ActivityServiceImpl implements ActivityService {
     public ActivityDTO upsert(ActivityReq activityReq) {
         Long currentUserId = ContextUtils.currentUser().getId();
         if (activityReq.getId() != null) {
-            // 更新操作
-            Activity existingActivity = activityRepository.getById(activityReq.getId());
+            Activity existingActivity = activityRepository.lambdaQuery()
+                    .eq(Activity::getId, activityReq.getId())
+                    .eq(Activity::getUserId, currentUserId)
+                    .one();
             if (Objects.isNull(existingActivity)) {
                 log.info("实际事项不存在：{}", activityReq.getId());
                 throw new ApiException(ActivityExceptionEnum.ACTIVITY_NOT_FOUND);
             }
-
-            // 检查实际事项是否属于当前用户
-            if (!Objects.equals(existingActivity.getUserId(), currentUserId)) {
-                log.info("用户无权限修改此实际事项：{}", activityReq.getId());
-                throw new ApiException(ActivityExceptionEnum.ACTIVITY_NOT_FOUND);
-            }
-
-            Activity activity = convertToEntity(activityReq, currentUserId);
-            activity.setId(activityReq.getId());
-            activity.setUserId(currentUserId); // 确保不会更改用户ID
-            activityRepository.updateById(activity);
-            return convertToDTO(activity);
-        } else {
-            // 创建操作
-            Activity activity = convertToEntity(activityReq, currentUserId);
-            activity.setUserId(currentUserId);
-            activityRepository.save(activity);
-            return convertToDTO(activity);
         }
+        Activity activity = convertToEntity(activityReq, currentUserId);
+        activityRepository.saveOrUpdate(activity);
+        return convertToDTO(activity);
     }
 
     @Override
