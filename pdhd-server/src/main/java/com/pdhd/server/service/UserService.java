@@ -1,6 +1,8 @@
 package com.pdhd.server.service;
 
 import com.pdhd.server.pojo.resp.UserDTO;
+import com.pdhd.server.pojo.req.LoginReq;
+import com.pdhd.server.pojo.resp.LoginDTO;
 
 /**
  * @author wangsiqian
@@ -22,4 +24,13 @@ public interface UserService {
      * @author wangsiqian
      */
     UserDTO getCurrentUserInfo();
+
+    /**
+     * 登录
+     *
+     * @param req 登录请求
+     * @return token
+     * @author wangsiqian
+     */
+    LoginDTO login(LoginReq req);
 }

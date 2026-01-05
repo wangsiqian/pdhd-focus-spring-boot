@@ -103,6 +103,7 @@ public class ScheduleServiceImpl implements ScheduleService {
     /**
      * 补充当天计划是否完成
      */
+    private void fillCompletedStatus(List<ScheduleDTO> schedules, Long currentUserId) {
         if (CollUtil.isEmpty(schedules)) {
             return;
         }

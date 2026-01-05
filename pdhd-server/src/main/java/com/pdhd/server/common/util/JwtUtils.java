@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.JSONReader;
 import com.pdhd.server.common.constant.JwtConstants;
 import com.pdhd.server.dao.entity.User;
+import com.google.common.collect.Maps;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.AccessLevel;
@@ -13,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author wangsiqian
@@ -27,6 +29,17 @@ public final class JwtUtils {
                 .setSubject(subject)
                 .setExpiration(
                         new Date(System.currentTimeMillis() + JwtConstants.EXPIRATION_MILLIS))
+                .signWith(SignatureAlgorithm.HS512, JwtConstants.SECRET)
+                .compact();
+    }
+
+    public static String generateToken(User user) {
+        Map<String, Object> claims = Maps.newHashMap();
+        claims.put("id", user.getId());
+        claims.put("username", user.getUsername());
+        return Jwts.builder()
+                .setClaims(claims)
+                .setExpiration(new Date(System.currentTimeMillis() + JwtConstants.EXPIRATION_MILLIS))
                 .signWith(SignatureAlgorithm.HS512, JwtConstants.SECRET)
                 .compact();
     }

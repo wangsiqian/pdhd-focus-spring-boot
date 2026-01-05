@@ -1,10 +1,13 @@
 package com.pdhd.server.manager;
 
 import cn.hutool.core.util.StrUtil;
+import com.pdhd.server.common.constant.JwtConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author wangsiqian
@@ -24,5 +27,19 @@ public class UserManager {
      */
     public String getTokenByUserId(Long userId) {
         return stringRedisTemplate.opsForValue().get(StrUtil.format("pdhd:user:token:{}", userId));
+    }
+
+    /**
+     * 缓存账号的session信息
+     *
+     * @param userId 账号
+     * @param token  token
+     * @author wangsiqian
+     */
+    public void saveToken(Long userId, String token) {
+        stringRedisTemplate.opsForValue()
+                .set(StrUtil.format("pdhd:user:token:{}", userId), token, JwtConstants.EXPIRATION_MILLIS,
+                        TimeUnit.MILLISECONDS);
+        log.info("缓存用户token成功，userId：{}", userId);
     }
 }
