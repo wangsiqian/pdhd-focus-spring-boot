@@ -536,7 +536,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         dto.setEndTime(schedule.getEndTime());
         dto.setStartDateTime(schedule.getStartDateTime());
         dto.setEndDateTime(schedule.getEndDateTime());
-        dto.setRepeatRule(schedule.getRepeatRuleType());
+        dto.setRepeatRuleType(schedule.getRepeatRuleType());
         dto.setRepeatRuleConfig(schedule.getRepeatRuleConfig());
         dto.setGroupId(schedule.getGroupId());
         dto.setUserId(schedule.getUserId());
