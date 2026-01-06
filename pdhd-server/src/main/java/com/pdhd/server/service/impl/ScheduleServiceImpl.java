@@ -5,6 +5,7 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.LocalDateTimeUtil;
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson2.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -41,6 +42,22 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ScheduleServiceImpl implements ScheduleService {
+    private static final List<String> DAILY_RULE_DAYS = Lists.newArrayList(
+            DayOfWeek.MONDAY.name(),
+            DayOfWeek.TUESDAY.name(),
+            DayOfWeek.WEDNESDAY.name(),
+            DayOfWeek.THURSDAY.name(),
+            DayOfWeek.FRIDAY.name(),
+            DayOfWeek.SATURDAY.name(),
+            DayOfWeek.SUNDAY.name()
+    );
+    private static final List<String> WEEKDAY_RULE_DAYS = Lists.newArrayList(
+            DayOfWeek.MONDAY.name(),
+            DayOfWeek.TUESDAY.name(),
+            DayOfWeek.WEDNESDAY.name(),
+            DayOfWeek.THURSDAY.name(),
+            DayOfWeek.FRIDAY.name()
+    );
     private final ScheduleRepository scheduleRepository;
     private final ActivityRepository activityRepository;
 
@@ -84,7 +101,7 @@ public class ScheduleServiceImpl implements ScheduleService {
         List<Schedule> repeatSchedules = scheduleRepository.lambdaQuery()
                 .eq(Schedule::getUserId, currentUserId)
                 .eq(Objects.nonNull(req.getGoalId()), Schedule::getGoalId, req.getGoalId())
-                .eq(Schedule::getRepeatRuleType, RepeatRuleEnum.CUSTOM)
+                .ne(Schedule::getRepeatRuleType, RepeatRuleEnum.NONE)
                 .list();
 
         // 3. 展开循环计划为具体实例
@@ -146,7 +163,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                     if (repeatRuleConfig == null)
                         continue;
 
-                    List<DayOfWeek> ruleDays = repeatRuleConfig.getList("daysOfWeek", DayOfWeek.class);
+                    List<DayOfWeek> ruleDays = parseRepeatRuleDays(repeatRuleConfig);
                     if (CollUtil.contains(ruleDays, currentDayOfWeek)) {
                         // 结合 Date 和 Time 生成 DateTime
                         LocalDateTime instanceStart = LocalDateTime.of(currentDate.toLocalDate(),
@@ -177,10 +194,70 @@ public class ScheduleServiceImpl implements ScheduleService {
         return instances;
     }
 
+    private List<DayOfWeek> parseRepeatRuleDays(JSONObject repeatRuleConfig) {
+        List<String> rawDays = repeatRuleConfig.getList("daysOfWeek", String.class);
+        if (CollUtil.isEmpty(rawDays)) {
+            return Collections.emptyList();
+        }
+
+        List<DayOfWeek> ruleDays = Lists.newArrayList();
+        for (String rawDay : rawDays) {
+            if (StrUtil.isBlank(rawDay)) {
+                continue;
+            }
+            try {
+                ruleDays.add(DayOfWeek.valueOf(rawDay));
+            } catch (Exception error) {
+                log.warn("Invalid repeat rule day: {}", rawDay);
+            }
+        }
+        return ruleDays;
+    }
+
+    private String buildRepeatRuleConfig(List<String> daysOfWeek) {
+        JSONObject config = new JSONObject();
+        config.put("daysOfWeek", daysOfWeek);
+        return JSONObject.toJSONString(config);
+    }
+
+    private void validateCustomRepeatRuleConfig(String repeatRuleConfig) {
+        if (StrUtil.isBlank(repeatRuleConfig)) {
+            throw new ApiException(ScheduleExceptionEnum.REPEAT_RULE_CONFIG_INVALID);
+        }
+        JSONObject config = JSONObject.parse(repeatRuleConfig);
+        if (config == null) {
+            throw new ApiException(ScheduleExceptionEnum.REPEAT_RULE_CONFIG_INVALID);
+        }
+        List<String> rawDays = config.getList("daysOfWeek", String.class);
+        if (CollUtil.isEmpty(rawDays)) {
+            throw new ApiException(ScheduleExceptionEnum.REPEAT_RULE_CONFIG_INVALID);
+        }
+        for (String rawDay : rawDays) {
+            if (StrUtil.isBlank(rawDay)) {
+                throw new ApiException(ScheduleExceptionEnum.REPEAT_RULE_CONFIG_INVALID);
+            }
+
+            try {
+                DayOfWeek.valueOf(rawDay);
+            } catch (Exception error) {
+                throw new ApiException(ScheduleExceptionEnum.REPEAT_RULE_CONFIG_INVALID);
+            }
+        }
+    }
+
     @Override
     public ScheduleDTO upsert(ScheduleReq scheduleReq) {
         Long currentUserId = ContextUtils.currentUser().getId();
         log.info("Upsert schedule, userId: {}, req: {}", currentUserId, scheduleReq);
+
+        RepeatRuleEnum repeatRuleType = scheduleReq.getRepeatRuleType();
+        if (RepeatRuleEnum.DAILY == repeatRuleType) {
+            scheduleReq.setRepeatRuleConfig(buildRepeatRuleConfig(DAILY_RULE_DAYS));
+        } else if (RepeatRuleEnum.WEEKDAY == repeatRuleType) {
+            scheduleReq.setRepeatRuleConfig(buildRepeatRuleConfig(WEEKDAY_RULE_DAYS));
+        } else if (RepeatRuleEnum.CUSTOM == repeatRuleType) {
+            validateCustomRepeatRuleConfig(scheduleReq.getRepeatRuleConfig());
+        }
 
         if (scheduleReq.getId() != null) {
             Schedule existingSchedule = scheduleRepository.lambdaQuery()
@@ -423,8 +500,8 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .endTime(scheduleReq.getEndDateTime().toLocalTime())
                 .startDateTime(scheduleReq.getStartDateTime())
                 .endDateTime(scheduleReq.getEndDateTime())
-                .repeatRuleType(scheduleReq.getRepeatRule() != null ? scheduleReq.getRepeatRule() : RepeatRuleEnum.NONE)
-                .repeatRuleConfig(scheduleReq.getCustomDays())
+                .repeatRuleType(scheduleReq.getRepeatRuleType())
+                .repeatRuleConfig(scheduleReq.getRepeatRuleConfig())
                 .groupId(scheduleReq.getGroupId())
                 .userId(userId)
                 .build();

@@ -37,7 +37,8 @@ public class ScheduleReq {
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
 
-    private RepeatRuleEnum repeatRule;
-    private String customDays;
+    @NotNull(message = "重复规则不能为空")
+    private RepeatRuleEnum repeatRuleType;
+    private String repeatRuleConfig;
     private String groupId;
 }

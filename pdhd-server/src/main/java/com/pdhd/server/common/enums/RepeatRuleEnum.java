@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum RepeatRuleEnum {
     NONE("不重复"),
+    DAILY("每天"),
+    WEEKDAY("工作日"),
     CUSTOM("自定义");
 
     private final String desc;
