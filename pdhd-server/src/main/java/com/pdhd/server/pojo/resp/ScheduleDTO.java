@@ -32,7 +32,7 @@ public class ScheduleDTO {
     private Integer status;
     private Boolean completed;
     private RepeatRuleEnum repeatRule;
-    private String customDays;
+    private String repeatRuleConfig;
     private String groupId;
     private Long userId;
     private LocalDateTime createdAt;
