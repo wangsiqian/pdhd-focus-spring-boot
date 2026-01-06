@@ -35,26 +35,28 @@ public class DashboardServiceImpl implements DashboardService {
     public DashboardFocusResp focus() {
         Long currentUserId = ContextUtils.currentUser().getId();
         LocalDateTime now = LocalDateTime.now();
-        FocusTaskResp current = buildCurrentFocus(currentUserId, now);
-        FocusTaskResp next = buildNextFocus(currentUserId, now);
+        Activity currentActivity = findCurrentActivity(currentUserId, now);
+        FocusTaskResp current = ObjectUtil.isNotNull(currentActivity)
+                ? buildFocusTask(currentActivity)
+                : buildCurrentScheduleFocus(now);
+        FocusTaskResp next = buildNextFocus(currentUserId, now, ObjectUtil.isNotNull(currentActivity));
         return DashboardFocusResp.builder()
                 .current(current)
                 .next(next)
                 .build();
     }
 
-    private FocusTaskResp buildCurrentFocus(Long currentUserId, LocalDateTime now) {
-        Activity currentActivity = activityRepository.lambdaQuery()
+    private Activity findCurrentActivity(Long currentUserId, LocalDateTime now) {
+        return activityRepository.lambdaQuery()
                 .eq(Activity::getUserId, currentUserId)
                 .le(Activity::getStartDateTime, now)
                 .ge(Activity::getEndDateTime, now)
                 .orderByDesc(Activity::getStartDateTime)
                 .last("limit 1")
                 .one();
-        if (ObjectUtil.isNotNull(currentActivity)) {
-            return buildFocusTask(currentActivity);
-        }
+    }
 
+    private FocusTaskResp buildCurrentScheduleFocus(LocalDateTime now) {
         Optional<ScheduleDTO> currentSchedule = listSchedules(now, now).stream()
                 .filter(schedule -> !schedule.getStartDateTime().isAfter(now)
                         && schedule.getEndDateTime().isAfter(now))
@@ -62,7 +64,16 @@ public class DashboardServiceImpl implements DashboardService {
         return currentSchedule.map(this::buildFocusTask).orElse(null);
     }
 
-    private FocusTaskResp buildNextFocus(Long currentUserId, LocalDateTime now) {
+    private FocusTaskResp buildNextFocus(Long currentUserId, LocalDateTime now, boolean preferResumingSchedule) {
+        if (preferResumingSchedule) {
+            Optional<ScheduleDTO> resumingSchedule = listSchedules(now, now).stream()
+                    .filter(schedule -> Boolean.TRUE.equals(schedule.getIsResuming()))
+                    .findFirst();
+            if (resumingSchedule.isPresent()) {
+                return buildFocusTask(resumingSchedule.get());
+            }
+        }
+
         Activity nextActivity = activityRepository.lambdaQuery()
                 .eq(Activity::getUserId, currentUserId)
                 .gt(Activity::getStartDateTime, now)
@@ -99,6 +110,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .goalId(activity.getGoalId())
                 .startDateTime(activity.getStartDateTime())
                 .endDateTime(activity.getEndDateTime())
+                .isResuming(Boolean.FALSE)
                 .build();
     }
 
@@ -113,6 +125,7 @@ public class DashboardServiceImpl implements DashboardService {
                 .goalId(schedule.getGoalId())
                 .startDateTime(schedule.getStartDateTime())
                 .endDateTime(schedule.getEndDateTime())
+                .isResuming(schedule.getIsResuming())
                 .build();
     }
 }

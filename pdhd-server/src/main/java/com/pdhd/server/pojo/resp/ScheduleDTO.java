@@ -31,6 +31,7 @@ public class ScheduleDTO {
     private LocalDateTime endDateTime;
     private Integer status;
     private Boolean completed;
+    private Boolean isResuming;
     private RepeatRuleEnum repeatRuleType;
     private String repeatRuleConfig;
     private String groupId;

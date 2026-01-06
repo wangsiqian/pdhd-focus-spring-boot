@@ -26,4 +26,5 @@ public class FocusTaskResp {
     private Long goalId;
     private LocalDateTime startDateTime;
     private LocalDateTime endDateTime;
+    private Boolean isResuming;
 }

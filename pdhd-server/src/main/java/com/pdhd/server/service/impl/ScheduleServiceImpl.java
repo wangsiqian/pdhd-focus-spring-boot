@@ -111,7 +111,10 @@ public class ScheduleServiceImpl implements ScheduleService {
         // 4. 补充完成状态
         fillCompletedStatus(result, currentUserId);
 
-        // 5. 排序
+        // 5. 补充是否恢复状态
+        fillResumingStatus(result, currentUserId);
+
+        // 6. 排序
         return result.stream()
                 .sorted(Comparator.comparing(ScheduleDTO::getStartDateTime))
                 .collect(Collectors.toList());
@@ -141,6 +144,29 @@ public class ScheduleServiceImpl implements ScheduleService {
         schedules.forEach(dto -> dto.setCompleted(completedKeys.contains(
                 buildActivityKey(dto.getId(), dto.getStartDateTime())
         )));
+    }
+
+    private void fillResumingStatus(List<ScheduleDTO> schedules, Long currentUserId) {
+        if (CollUtil.isEmpty(schedules)) {
+            return;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        Activity tempActivity = activityRepository.lambdaQuery()
+                .eq(Activity::getUserId, currentUserId)
+                .le(Activity::getStartDateTime, now)
+                .ge(Activity::getEndDateTime, now)
+                .eq(Activity::getScheduleId, 0)
+                .last("limit 1")
+                .one();
+        boolean hasTempActivity = tempActivity != null;
+        schedules.forEach(dto -> {
+            if (!hasTempActivity) {
+                dto.setIsResuming(Boolean.FALSE);
+                return;
+            }
+            boolean isRunning = !dto.getStartDateTime().isAfter(now) && dto.getEndDateTime().isAfter(now);
+            dto.setIsResuming(isRunning);
+        });
     }
 
     private List<ScheduleDTO> expandRepeatSchedules(List<Schedule> repeatSchedules, LocalDateTime queryStart,
