@@ -3,6 +3,7 @@ package com.pdhd.server.pojo.resp;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * @author pdhd
@@ -16,4 +17,6 @@ public class GoalDTO {
     private Integer progress;
     private Long userId;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private List<ScheduleDTO> repeatSchedules;
 }
