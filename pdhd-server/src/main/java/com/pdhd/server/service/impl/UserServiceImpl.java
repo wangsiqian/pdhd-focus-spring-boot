@@ -5,6 +5,7 @@ import com.pdhd.server.common.exception.ApiException;
 import com.pdhd.server.common.util.BeanUtils;
 import com.pdhd.server.common.util.ContextUtils;
 import com.pdhd.server.common.util.JwtUtils;
+import com.pdhd.server.common.util.PasswordUtils;
 import com.pdhd.server.dao.entity.User;
 import com.pdhd.server.dao.repository.UserRepository;
 import com.pdhd.server.exception.UserExceptionEnum;
@@ -53,7 +54,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.lambdaQuery()
                 .eq(User::getUsername, req.getUsername())
                 .one();
-        if (ObjectUtil.isNull(user) || ObjectUtil.notEqual(user.getPassword(), req.getPassword())) {
+        if (ObjectUtil.isNull(user) || !PasswordUtils.matches(req.getPassword(), user.getPassword())) {
             log.info("账号或密码错误，username：{}", req.getUsername());
             throw new ApiException(UserExceptionEnum.ACCOUNT_OR_PASSWORD_WRONG);
         }
