@@ -13,6 +13,8 @@ spring:
         file-extension: yaml
         namespace: ${NACOS_NAMESPACE_ID:913f75b3-2c2d-4def-87ba-51154ebb0cc9}
         refresh-enabled: true
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
 
 logback:
   path: target/logs
