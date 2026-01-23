@@ -1,8 +1,10 @@
 package com.adhd.server.service;
 
-import com.adhd.server.pojo.resp.ActivityDTO;
 import com.adhd.server.pojo.req.ActivityReq;
 import com.adhd.server.pojo.req.ListActivityReq;
+import com.adhd.server.pojo.req.ListPLanReq;
+import com.adhd.server.pojo.resp.ActivityDTO;
+import com.adhd.server.pojo.resp.ActivityPlanDTO;
 
 import java.util.List;
 
@@ -44,4 +46,12 @@ public interface ActivityService {
      * @author adhd
      */
     void delete(Long id);
+
+    /**
+     * 获取时间范围内的事件，按天分组
+     *
+     * @param req 查询参数
+     * @return 按天分组的事件列表
+     */
+    List<ActivityPlanDTO> plan(ListPLanReq req);
 }

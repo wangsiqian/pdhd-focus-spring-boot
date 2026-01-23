@@ -202,8 +202,7 @@ public class ScheduleServiceImpl implements ScheduleService {
                             instanceEnd = instanceEnd.plusDays(1);
                         }
 
-                        // 判断时间段交集：实例结束 > 查询开始 && 实例开始 < 查询结束
-                        if (instanceEnd.isAfter(queryStart) && instanceStart.isBefore(queryEnd)) {
+                        if (isInstanceInQueryRange(instanceStart, instanceEnd, queryStart, queryEnd, schedule.getCreatedAt())) {
                             ScheduleDTO dto = convertToDTO(schedule, fullDetail);
                             dto.setStartDateTime(instanceStart);
                             dto.setEndDateTime(instanceEnd);
@@ -219,6 +218,18 @@ public class ScheduleServiceImpl implements ScheduleService {
             }
         }
         return instances;
+    }
+
+    /**
+     * 判断实例是否在查询范围内
+     * 条件：时间段有交集 且 实例开始时间不早于 schedule 创建日期
+     */
+    private boolean isInstanceInQueryRange(LocalDateTime instanceStart, LocalDateTime instanceEnd,
+                                           LocalDateTime queryStart, LocalDateTime queryEnd,
+                                           LocalDateTime scheduleCreatedAt) {
+        boolean hasTimeOverlap = instanceEnd.isAfter(queryStart) && instanceStart.isBefore(queryEnd);
+        boolean notBeforeCreation = !instanceStart.isBefore(scheduleCreatedAt.toLocalDate().atStartOfDay());
+        return hasTimeOverlap && notBeforeCreation;
     }
 
     private List<DayOfWeek> parseRepeatRuleDays(JSONObject repeatRuleConfig) {

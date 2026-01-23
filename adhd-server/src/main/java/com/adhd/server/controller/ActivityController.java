@@ -1,10 +1,12 @@
 package com.adhd.server.controller;
 
 import com.adhd.server.common.annotation.EnableApiResponse;
-import com.adhd.server.pojo.resp.ActivityDTO;
 import com.adhd.server.pojo.req.ActivityReq;
 import com.adhd.server.pojo.req.GetByIdReq;
 import com.adhd.server.pojo.req.ListActivityReq;
+import com.adhd.server.pojo.req.ListPLanReq;
+import com.adhd.server.pojo.resp.ActivityDTO;
+import com.adhd.server.pojo.resp.ActivityPlanDTO;
 import com.adhd.server.service.ActivityService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,6 +33,11 @@ public class ActivityController {
     @PostMapping("/list")
     public List<ActivityDTO> list(@Valid @RequestBody ListActivityReq req) {
         return activityService.list(req);
+    }
+
+    @PostMapping("/plan")
+    public List<ActivityPlanDTO> plan(@Valid @RequestBody ListPLanReq req) {
+        return activityService.plan(req);
     }
 
     @PostMapping("/upsert")
