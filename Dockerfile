@@ -1,3 +1,3 @@
 FROM openjdk:8u102-jre
-COPY pdhd-server/target/pdhd-server.jar ./pdhd-server.jar
+COPY adhd-server/target/adhd-server.jar ./adhd-server.jar
 ENTRYPOINT  [{ENTRYPOINT}]

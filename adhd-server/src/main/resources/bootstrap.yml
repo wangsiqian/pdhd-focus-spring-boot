@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: adhd
+  profiles:
+    active: ${NACOS_PROFILES_ACTIVE:dev}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_HOST:http://127.0.0.1}:${NACOS_PORT:8848}
+        file-extension: yaml
+        namespace: ${NACOS_NAMESPACE_ID:public}
+        refresh-enabled: true
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+
+logback:
+  path: target/logs

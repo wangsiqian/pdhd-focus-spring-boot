@@ -1,4 +1,4 @@
--- PDHD Focus 系统数据库表结构
+-- ADHD Focus 系统数据库表结构
 
 -- 用户表
 CREATE TABLE `user`
