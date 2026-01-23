@@ -123,28 +123,41 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     /**
      * 补充当天计划是否完成
+     * 通过 scheduleId + 日期范围 匹配，支持跨天计划和 Activity 时间修改
      */
     private void fillCompletedStatus(List<ScheduleDTO> schedules, Long currentUserId) {
         if (CollUtil.isEmpty(schedules)) {
             return;
         }
         Set<Long> scheduleIds = Sets.newHashSetWithExpectedSize(schedules.size());
-        Set<LocalDateTime> startTimes = Sets.newHashSetWithExpectedSize(schedules.size());
-        schedules.forEach(dto -> {
-            scheduleIds.add(dto.getId());
-            startTimes.add(dto.getStartDateTime());
-        });
+        schedules.forEach(dto -> scheduleIds.add(dto.getId()));
+
+        // 只按 scheduleId 查询，在内存中按日期范围匹配
         List<Activity> activities = activityRepository.lambdaQuery()
                 .in(Activity::getScheduleId, scheduleIds)
-                .in(Activity::getStartDateTime, startTimes)
                 .eq(Activity::getUserId, currentUserId)
                 .list();
-        Set<String> completedKeys = activities.stream()
-                .map(activity -> buildActivityKey(activity.getScheduleId(), activity.getStartDateTime()))
-                .collect(Collectors.toSet());
-        schedules.forEach(dto -> dto.setCompleted(completedKeys.contains(
-                buildActivityKey(dto.getId(), dto.getStartDateTime())
-        )));
+
+        // 按 scheduleId 分组 Activity
+        Map<Long, List<Activity>> activityMap = activities.stream()
+                .collect(Collectors.groupingBy(Activity::getScheduleId));
+
+        schedules.forEach(dto -> {
+            List<Activity> relatedActivities = activityMap.get(dto.getId());
+            if (CollUtil.isEmpty(relatedActivities)) {
+                dto.setCompleted(Boolean.FALSE);
+                return;
+            }
+            // 检查是否有 Activity 的 startDate 在计划的日期范围内
+            LocalDate scheduleStartDate = dto.getStartDateTime().toLocalDate();
+            LocalDate scheduleEndDate = dto.getEndDateTime().toLocalDate();
+            boolean completed = relatedActivities.stream().anyMatch(activity -> {
+                LocalDate activityStartDate = activity.getStartDateTime().toLocalDate();
+                return !activityStartDate.isBefore(scheduleStartDate)
+                        && !activityStartDate.isAfter(scheduleEndDate);
+            });
+            dto.setCompleted(completed);
+        });
     }
 
     private void fillResumingStatus(List<ScheduleDTO> schedules, Long currentUserId) {
@@ -489,22 +502,32 @@ public class ScheduleServiceImpl implements ScheduleService {
             return;
         }
 
-        Set<LocalDateTime> startTimes = pendingActivities.stream()
-                .map(Activity::getStartDateTime)
-                .collect(Collectors.toSet());
-
+        // 只按 scheduleId 查询，在内存中按日期范围匹配防重
         List<Activity> existingActivities = activityRepository.lambdaQuery()
                 .in(Activity::getScheduleId, scheduleIds)
-                .in(Activity::getStartDateTime, startTimes)
                 .eq(Activity::getUserId, currentUserId)
                 .list();
 
-        Set<String> existingKeys = existingActivities.stream()
-                .map(this::buildActivityKey)
-                .collect(Collectors.toSet());
+        // 按 scheduleId 分组已存在的 Activity
+        Map<Long, List<Activity>> existingActivityMap = existingActivities.stream()
+                .collect(Collectors.groupingBy(Activity::getScheduleId));
 
+        // 检查每个 pending Activity 是否已存在（支持跨天）
         List<Activity> finalSaveList = pendingActivities.stream()
-                .filter(a -> !existingKeys.contains(buildActivityKey(a)))
+                .filter(pending -> {
+                    List<Activity> existing = existingActivityMap.get(pending.getScheduleId());
+                    if (CollUtil.isEmpty(existing)) {
+                        return true;
+                    }
+                    // 计划的日期范围
+                    LocalDate planStartDate = pending.getStartDateTime().toLocalDate();
+                    LocalDate planEndDate = pending.getEndDateTime().toLocalDate();
+                    // 检查是否有 Activity 的 startDate 在计划日期范围内
+                    return existing.stream().noneMatch(act -> {
+                        LocalDate actStartDate = act.getStartDateTime().toLocalDate();
+                        return !actStartDate.isBefore(planStartDate) && !actStartDate.isAfter(planEndDate);
+                    });
+                })
                 .collect(Collectors.toList());
 
         if (CollUtil.isNotEmpty(finalSaveList)) {
@@ -518,9 +541,18 @@ public class ScheduleServiceImpl implements ScheduleService {
         Long currentUserId = ContextUtils.currentUser().getId();
         log.info("Uncomplete schedule, userId: {}, req: {}", currentUserId, req);
 
+        // 计算日期范围，支持跨天计划
+        LocalDate startDate = req.getStartDateTime().toLocalDate();
+        LocalDate endDate = req.getEndDateTime() != null
+                ? req.getEndDateTime().toLocalDate()
+                : startDate;
+        LocalDateTime rangeStart = startDate.atStartOfDay();
+        LocalDateTime rangeEnd = endDate.atTime(LocalTime.MAX);
+
         activityRepository.lambdaUpdate()
                 .eq(Activity::getScheduleId, req.getScheduleId())
-                .eq(Activity::getStartDateTime, req.getStartDateTime())
+                .ge(Activity::getStartDateTime, rangeStart)
+                .le(Activity::getStartDateTime, rangeEnd)
                 .eq(Activity::getUserId, currentUserId)
                 .set(Activity::getIsDelete, Boolean.TRUE)
                 .update();
@@ -550,7 +582,8 @@ public class ScheduleServiceImpl implements ScheduleService {
     }
 
     private String buildActivityKey(Long scheduleId, LocalDateTime startDateTime) {
-        return scheduleId + "_" + startDateTime.toString();
+        // 按日期匹配，允许 Activity 时间修改后仍能正确关联
+        return scheduleId + "_" + startDateTime.toLocalDate().toString();
     }
 
     private ScheduleDTO convertToDTO(Schedule schedule) {

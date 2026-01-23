@@ -14,4 +14,8 @@ public class UncompleteScheduleReq {
   private Long scheduleId;
   @NotNull
   private LocalDateTime startDateTime;
+  /**
+   * 结束时间，用于处理跨天计划
+   */
+  private LocalDateTime endDateTime;
 }
