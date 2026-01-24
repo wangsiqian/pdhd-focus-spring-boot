@@ -30,6 +30,9 @@ spring:
 mybatis-plus:
   # 定义mybatis映射文件的位置
   mapper-locations: classpath:/mapper/*Mapper.xml
+  configuration:
+    # 打印SQL日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 #xxl配置文件
 xxl:

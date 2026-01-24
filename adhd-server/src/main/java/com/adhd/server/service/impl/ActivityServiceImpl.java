@@ -165,6 +165,10 @@ public class ActivityServiceImpl implements ActivityService {
 
         Map<LocalDate, List<ActivityDTO>> map = new HashMap<>();
 
+        // 请求的日期范围
+        LocalDate reqStartDate = req.getStartDateTime().toLocalDate();
+        LocalDate reqEndDate = req.getEndDateTime().toLocalDate();
+
         for (Activity activity : activities) {
             LocalDateTime startDateTime = activity.getStartDateTime();
             LocalDateTime endDateTime = activity.getEndDateTime();
@@ -178,16 +182,29 @@ public class ActivityServiceImpl implements ActivityService {
             for (int i = 0; i <= days; i++) {
                 LocalDate currentDate = startDate.plusDays(i);
 
+                // 过滤掉不在请求日期范围内的天
+                if (currentDate.isBefore(reqStartDate) || currentDate.isAfter(reqEndDate)) {
+                    continue;
+                }
+
                 LocalDateTime splitStart = startDateTime;
                 if (currentDate.isAfter(startDate)) {
                     // 非第一天，开始时间为 00:00:00
                     splitStart = currentDate.atStartOfDay();
+                }
+                // 如果开始时间早于请求的开始时间，取请求的开始时间
+                if (splitStart.isBefore(req.getStartDateTime())) {
+                    splitStart = req.getStartDateTime();
                 }
 
                 LocalDateTime splitEnd = endDateTime;
                 if (currentDate.isBefore(endDate)) {
                     // 非最后一天，结束时间为 23:59:59
                     splitEnd = LocalDateTime.of(currentDate, LocalTime.MAX);
+                }
+                // 如果结束时间晚于请求的结束时间，取请求的结束时间
+                if (splitEnd.isAfter(req.getEndDateTime())) {
+                    splitEnd = req.getEndDateTime();
                 }
 
                 ActivityDTO newDto = convertToDTO(activity);
