@@ -390,6 +390,7 @@ public class DashboardServiceImpl implements DashboardService {
             result.add(DistributionTrendItemResp.builder()
                     .date(current)
                     .work(typeMinutes.getOrDefault(TypeEnum.WORK, 0L))
+                    .entertainment(typeMinutes.getOrDefault(TypeEnum.ENTERTAINMENT, 0L))
                     .invest(typeMinutes.getOrDefault(TypeEnum.INVEST, 0L))
                     .study(typeMinutes.getOrDefault(TypeEnum.STUDY, 0L))
                     .life(typeMinutes.getOrDefault(TypeEnum.LIFE, 0L))

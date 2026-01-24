@@ -14,6 +14,7 @@ public enum TypeEnum {
     INVEST("投资"),
     STUDY("学习"),
     LIFE("生活"),
+    ENTERTAINMENT("娱乐"),
     OTHER("其它");
 
     private final String desc;

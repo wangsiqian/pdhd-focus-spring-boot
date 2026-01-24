@@ -26,6 +26,12 @@ public class DistributionTrendItemResp {
      * 工作时长（分钟）
      */
     private Long work;
+
+    /**
+     * 娱乐（分钟）
+     */
+    private Long entertainment;
+
     /**
      * 投资时长（分钟）
      */
